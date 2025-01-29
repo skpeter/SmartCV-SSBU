@@ -1,0 +1,19 @@
+{
+    "state": "game_end",
+    "is_results_screen": false,
+    "stage": "Hollow Bastion",
+    "players": [
+        {
+            "name": "Player 1",
+            "character": "LUCARIO",
+            "stocks": 3,
+            "damage": 43
+        },
+        {
+            "name": "Player 2",
+            "character": "PIT",
+            "stocks": 0,
+            "damage": ""
+        }
+    ]
+}
