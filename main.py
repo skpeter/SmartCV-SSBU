@@ -238,14 +238,15 @@ def detect_versus_screen():
             for player in payload['players']:
                 player['stocks'] = 3
             previous_states.append(payload['state'])
-            payload['players'][0]['character'] = read_text(img, (110, 10, 870, 120), True)
+            c1 = payload['players'][0]['character'] = read_text(img, (110, 10, 870, 120), True)
             print("Player 1 character:", payload['players'][0]['character'])
-            payload['players'][1]['character'] = read_text(img, (1070, 10, 870, 120), True)
+            c2 = payload['players'][1]['character'] = read_text(img, (1070, 10, 870, 120), True)
             print("Player 2 character:", payload['players'][1]['character'])
-            payload['players'][0]['name'] = read_text(img, (5, 155, 240, 50), True)
+            t1 = payload['players'][0]['name'] = read_text(img, (5, 155, 240, 50), True)
             print("Player 1 tag:", payload['players'][0]['name'])
-            payload['players'][1]['name'] = read_text(img, (965, 155, 240, 50), True)
+            t2 = payload['players'][1]['name'] = read_text(img, (965, 155, 240, 50), True)
             print("Player 2 tag:", payload['players'][1]['name'])
+            payload['players'][0]['character'], payload['players'][1]['character'], payload['players'][0]['name'], payload['players'][1]['name'] = c1, c2, t1, t2
     return img
 
 
@@ -359,9 +360,9 @@ def process_game_end_data(main_img):
     global payload
     # Define the area to read
     x, y, w, h = 510, 920, 145, 80
-    p1_percentage_img = main_img[y:y+h, x:x+w]
+    p1_damage_img = main_img[y:y+h, x:x+w]
     x, y, w, h = 1250, 920, 145, 80
-    p2_percentage_img = main_img[y:y+h, x:x+w]
+    p2_damage_img = main_img[y:y+h, x:x+w]
     
     # Initialize the reader
     reader = easyocr.Reader(['en'])
@@ -369,13 +370,18 @@ def process_game_end_data(main_img):
     results = []
     
     # Use OCR to read the text from the image
-    result = reader.readtext(p1_percentage_img)
+    result = reader.readtext(p1_damage_img)
     results.append(' '.join([res[1] for res in result]))
-    result = reader.readtext(p2_percentage_img)
+    result = reader.readtext(p2_damage_img)
     results.append(' '.join([res[1] for res in result]))
 
     payload['players'][0]['damage'] = results[0]
     payload['players'][1]['damage'] = results[1]
+
+    # if player has one stock left and the damage recognizes as an empty string, they've lost all of their stocks.
+    for player in payload['players']:
+        if player['stocks'] == 1 and player['damage'] == '':
+            player['stocks'] = 0
     
     # Extract and print the text
     print("Damage read: ", payload['players'][0]['damage'], payload['players'][1]['damage'])
