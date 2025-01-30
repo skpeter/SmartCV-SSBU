@@ -16,6 +16,7 @@ It's a project that uses pixel detection to recognize certain situations in the 
 - Open a terminal such as `Command Prompt (cmd)` or `bash` and enter the following command:
 - - `pip install easyocr`
 - You will also need to install PyTorch, and the command to use depends on your system. Head to Pytorch's "Start Locally" section [here](https://pytorch.org/get-started/locally/), pick the **Stable** build, select the OS you use (**Windows, Mac or Linux**), **Pip** as packaging system, **Python** as language and then select the **Compute Platform** available on your system.
+![PyTorch installation page](img/install1.jpg)
 - - **Compute Platform** depends on which video card (GPU) you own. Look up your video card's specifications on your manufacturer's website and check out which of the available platforms it supports.
 - - If your computer does not support any of the available platforms, you can choose **CPU** (which is going to be slower and use up more resources, but still works).
 - - Choosing these options will generate a command that you should copy and paste on your terminal. PyTorch weighs around 3GB, so take your time.
