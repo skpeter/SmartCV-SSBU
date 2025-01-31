@@ -37,12 +37,12 @@ jobs:
 
     - name: Copy config file
       run: |
-        sudo chmod -R 755 dist/main/
-        cp config.ini.example dist/main/config.ini
+        sudo chmod -R 755 dist/smartcv/
+        cp config.ini.example dist/smartcv/config.ini
 
     - name: Create zip file
       run: |
-        cd dist/main
+        cd dist/smartcv
         zip -r ../release.zip .
 
     - name: Upload binaries to release
