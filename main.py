@@ -388,7 +388,7 @@ def process_game_end_data(main_img):
 
 
 def run_detection():
-    global payload, previous_states, images
+    global payload, previous_states
     while True:
         if not payload['state']:
             detect_stage_select_screen()
@@ -398,7 +398,6 @@ def run_detection():
         elif payload['state'] == "character_select":
             detect_stage_select_screen()
             detect_versus_screen()
-            images = []
             gc.collect()
         elif payload['state'] == "in_game":
             detect_stage_select_screen()
