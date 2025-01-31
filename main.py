@@ -15,7 +15,7 @@ config = configparser.ConfigParser()
 config.read('config.ini')
 
 payload = {
-    "state": 'character_select',
+    "state": None,
     "stage": None,
     "players": [
         {
