@@ -36,7 +36,9 @@ jobs:
       run: pyinstaller main.spec
 
     - name: Copy config file
-      run: cp config.ini.example dist/main/config.ini
+      run: |
+        sudo chmod -R 755 dist/main/
+        cp config.ini.example dist/main/config.ini
 
     - name: Create zip file
       run: |
