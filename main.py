@@ -384,7 +384,7 @@ def process_game_end_data(main_img):
             player['stocks'] = 0
     
     # Extract and print the text
-    print("Damage read: ", payload['players'][0]['damage'], payload['players'][1]['damage'])
+    print("Damage read: Player 1: ", payload['players'][0]['damage'], " - Player 2: ", payload['players'][1]['damage'])
 
 
 def run_detection():
