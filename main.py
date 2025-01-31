@@ -11,6 +11,8 @@ import gc
 import json
 import websockets
 import asyncio
+import ssbu
+from tag_matching import findBestMatch
 config = configparser.ConfigParser()
 config.read('config.ini')
 
@@ -40,7 +42,7 @@ def detect_stage_select_screen():
     
     # Get the feed path from the config file
     feed_path = config.get('settings', 'feed_path')
-    
+
     while True:
         try:
             # Verify the image
@@ -50,13 +52,14 @@ def detect_stage_select_screen():
             break
         except (OSError, Image.UnidentifiedImageError) as e:
             if "truncated" in str(e) or "cannot identify image file" in str(e) or "could not create decoder object" in str(e):
+                time.sleep(0.25)
                 continue
             else:
                 raise e
     
     # Define the target colors and deviation
     target_color1 = (85, 98, 107)  # #55626b in RGB
-    target_color2 = (165, 2, 21)   # #a50215 in RGB
+    target_color2 = (200, 0, 0)   # #a50215 in RGB
     deviation = 0.1
     
     # Check if the pixel color is within the deviation range
@@ -86,6 +89,7 @@ def detect_selected_stage():
             break
         except (OSError, Image.UnidentifiedImageError) as e:
             if "truncated" in str(e) or "cannot identify image file" in str(e) or "could not create decoder object" in str(e):
+                time.sleep(0.25)
                 continue
             else:
                 raise e
@@ -100,7 +104,8 @@ def detect_selected_stage():
     
     if is_within_deviation(pixel, target_color, deviation):
         print("Stage selected")
-        payload['stage'] = read_text(img, (110, 700, 500, 100))
+        stage = read_text(img, (110, 700, 500, 100))
+        payload['stage'] = findBestMatch(stage, ssbu.stages)
         print("Selected stage:", payload['stage'])
 
 def detect_character_select_screen():
@@ -118,6 +123,7 @@ def detect_character_select_screen():
             break
         except (OSError, Image.UnidentifiedImageError) as e:
             if "truncated" in str(e) or "cannot identify image file" in str(e) or "could not create decoder object" in str(e):
+                time.sleep(0.25)
                 continue
             else:
                 raise e
@@ -142,34 +148,6 @@ def detect_character_select_screen():
                 player['name'] = None
 
     return
-
-def unskew_image(image):
-    
-    # Apply edge detection
-    edges = cv2.Canny(image, 50, 150, apertureSize=3)
-    
-    # Find contours
-    contours, _ = cv2.findContours(edges, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
-    
-    # Find the minimum area rectangle
-    rect = cv2.minAreaRect(np.concatenate(contours))
-    angle = rect[-1]
-    
-    # Correct the angle
-    if angle < -45:
-        angle = -(90 + angle)
-    else:
-        angle = -angle
-    
-    # Get the rotation matrix
-    (h, w) = image.shape[:2]
-    center = (w // 2, h // 2)
-    M = cv2.getRotationMatrix2D(center, angle, 1.0)
-    
-    # Rotate the image
-    rotated = cv2.warpAffine(np.array(image), M, (w, h), flags=cv2.INTER_CUBIC, borderMode=cv2.BORDER_REPLICATE)
-    
-    return Image.fromarray(rotated)
 
 def read_text(img, region, unskew=False):
     global payload
@@ -215,6 +193,7 @@ def detect_versus_screen():
             break
         except (OSError, Image.UnidentifiedImageError) as e:
             if "truncated" in str(e) or "cannot identify image file" in str(e) or "could not create decoder object" in str(e):
+                time.sleep(0.25)
                 continue
             else:
                 raise e
@@ -238,14 +217,16 @@ def detect_versus_screen():
             for player in payload['players']:
                 player['stocks'] = 3
             previous_states.append(payload['state'])
-            c1 = payload['players'][0]['character'] = read_text(img, (110, 10, 870, 120), True)
-            print("Player 1 character:", payload['players'][0]['character'])
-            c2 = payload['players'][1]['character'] = read_text(img, (1070, 10, 870, 120), True)
-            print("Player 2 character:", payload['players'][1]['character'])
-            t1 = payload['players'][0]['name'] = read_text(img, (5, 155, 240, 50), True)
-            print("Player 1 tag:", payload['players'][0]['name'])
-            t2 = payload['players'][1]['name'] = read_text(img, (965, 155, 240, 50), True)
-            print("Player 2 tag:", payload['players'][1]['name'])
+            c1 = read_text(img, (110, 10, 870, 120), True)
+            c1 = findBestMatch(c1, ssbu.characters)
+            print("Player 1 character:", c1)
+            c2 = read_text(img, (1070, 10, 870, 120), True)
+            c2 = findBestMatch(c2, ssbu.characters)
+            print("Player 2 character:", c2)
+            t1 = read_text(img, (5, 155, 240, 50), True)
+            print("Player 1 tag:", t1)
+            t2 = read_text(img, (965, 155, 240, 50), True)
+            print("Player 2 tag:", t2)
             payload['players'][0]['character'], payload['players'][1]['character'], payload['players'][0]['name'], payload['players'][1]['name'] = c1, c2, t1, t2
     return img
 
@@ -265,6 +246,7 @@ def detect_taken_stock():
             break
         except (OSError, Image.UnidentifiedImageError) as e:
             if "truncated" in str(e) or "cannot identify image file" in str(e) or "could not create decoder object" in str(e):
+                time.sleep(0.25)
                 continue
             else:
                 raise e
@@ -322,10 +304,12 @@ def detect_game_end():
             # Load the main image
             main_img = cv2.imread(feed_path, cv2.IMREAD_GRAYSCALE)
             if main_img is None:
+                time.sleep(0.25)
                 continue #image may be corrupted, try again
             break
         except OSError as e:
             if "image file is truncated" in str(e):
+                time.sleep(0.25)
                 continue
             else:
                 raise e
@@ -380,7 +364,7 @@ def process_game_end_data(main_img):
 
     # if player has one stock left and the damage recognizes as an empty string, they've lost all of their stocks.
     for player in payload['players']:
-        if player['stocks'] == 1 and player['damage'] == '':
+        if player['stocks'] < 3 and player['damage'] == '':
             player['stocks'] = 0
     
     # Extract and print the text
@@ -390,7 +374,7 @@ def process_game_end_data(main_img):
 def run_detection():
     global payload, previous_states
     while True:
-        if not payload['state']:
+        if payload['state'] == None:
             detect_stage_select_screen()
         elif payload['state'] == "stage_select":
             detect_selected_stage()
