@@ -36,3 +36,7 @@ It's a project that uses pixel detection to recognize certain situations in the 
 ## How does it work?
 
 Explanation coming soon
+
+## Contact
+
+[I am mostly available on my team's Discord Server if you'd like to talk about SmartCV or have any additional questions.](https://discord.gg/zecMKvF8b5)
