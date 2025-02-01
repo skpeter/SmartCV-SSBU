@@ -33,6 +33,16 @@ It's a project that uses pixel detection to recognize certain situations in the 
 ## Usage
 - **All you need to do is open smartcv.exe and follow the on-screen instructions for the game detection to start. Make sure to keep OBS open!** 
 
+## Where do I use this?
+SmartCV opens a websocket server (on port 6565 by default) to send data to.
+As of this writing, only [S.M.A.R.T.](https://ko-fi.com/post/S-M-A-R-T-is-officially-released-L3L0178E41) has integrations to it. If you want to integrate SmartCV into our app, you can look at what the data output looks like on the example JSON files.
+
+## Known Issues
+
+- The app currently is unable to tell from the three different Mii fighter characters (because on the versus screen, they all show up as Mii). A solution is being worked on
+- The app doesn't know how to differentiate handwarmers from actual matches. S.M.A.R.T. (the app)
+
+
 ## How does it work?
 
 Explanation coming soon
