@@ -35,7 +35,7 @@ It's a project that uses pixel detection to recognize certain situations in the 
 
 ## Where do I use this?
 SmartCV opens a websocket server (on port 6565 by default) to send data to.
-As of this writing, only [S.M.A.R.T.](https://ko-fi.com/post/S-M-A-R-T-is-officially-released-L3L0178E41) has integrations to it. If you want to integrate SmartCV into our app, you can look at what the data output looks like on the example JSON files.
+As of this writing, only [S.M.A.R.T.](https://skpeter.github.io/smart-user-guide) has integrations to it. If you want to integrate SmartCV into our app, you can look at what the data output looks like on the example JSON files.
 
 ## Known Issues
 
