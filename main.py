@@ -366,6 +366,11 @@ def process_game_end_data(main_img):
     for player in payload['players']:
         if player['stocks'] < 3 and player['damage'] == '':
             player['stocks'] = 0
+            print(player['name'] + "has lost all of their stocks")
+            for player in payload['players']:
+                if player['damage'] != '':
+                    print(player['name'] + " Wins!")
+            
     
     # Extract and print the text
     print("Damage read: Player 1: ", payload['players'][0]['damage'], " - Player 2: ", payload['players'][1]['damage'])
