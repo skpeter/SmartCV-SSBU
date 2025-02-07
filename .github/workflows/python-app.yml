@@ -37,7 +37,7 @@ jobs:
 
     - name: Copy config file
       run: |
-        icacls dist\smartcv /grant Everyone:(OI)(CI)F /T
+        icacls dist\smartcv /grant Everyone:(OI)(CI)F /T /C
         copy config.ini.example dist\smartcv\config.ini
 
     - name: Create zip file
