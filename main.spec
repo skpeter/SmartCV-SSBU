@@ -38,7 +38,6 @@ exe = EXE(
     pyz,
     a.scripts,
     [],
-    exclude_binaries=False,
     name='smartcv',
     debug=False,
     bootloader_ignore_signals=False,
