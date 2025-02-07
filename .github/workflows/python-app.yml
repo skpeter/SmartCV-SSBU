@@ -37,13 +37,13 @@ jobs:
 
     - name: Copy config file
       run: |
-        sudo chmod -R 755 dist/smartcv/
-        cp config.ini.example dist/smartcv/config.ini
+        icacls dist\smartcv /grant Everyone:(OI)(CI)F /T
+        copy config.ini.example dist\smartcv\config.ini
 
     - name: Create zip file
       run: |
-        cd dist/smartcv
-        zip -r ../release.zip .
+        cd dist\smartcv
+        powershell Compress-Archive -Path * -DestinationPath ..\release.zip
 
     - name: Upload binaries to release
       uses: svenstaro/upload-release-action@v2
