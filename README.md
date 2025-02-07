@@ -35,12 +35,12 @@ It's a project that uses pixel detection to recognize certain situations in the 
 
 ## Where do I use this?
 SmartCV opens a websocket server (on port 6565 by default) to send data to.
-As of this writing, only [S.M.A.R.T.](https://skpeter.github.io/smart-user-guide) has integrations to it. If you want to integrate SmartCV into our app, you can look at what the data output looks like on the example JSON files.
+As of this writing, only [S.M.A.R.T.](https://skpeter.github.io/smart-user-guide) has integrations to it. If you want to integrate SmartCV into your own app, you can look at what the data output looks like on the example JSON files.
 
 ## Known Issues
 
 - The app currently is unable to tell from the three different Mii fighter characters (because on the versus screen, they all show up as Mii). A solution is being worked on
-- The app doesn't know how to differentiate handwarmers from actual matches. S.M.A.R.T. (the app) has a workaround for this at the moment.
+- The app doesn't know how to differentiate handwarmers from actual matches. [S.M.A.R.T.](https://skpeter.github.io/smart-user-guide) (the companion app) has a workaround for this at the moment.
 
 
 ## How does it work?
