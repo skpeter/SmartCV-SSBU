@@ -5,7 +5,7 @@ SmartCV-SSBU is a tool designed to provide data on Super Smash Bros. Ultimate ma
 It's a project that uses pixel detection to recognize certain situations in the game to take the opportunity to read data from using OCR. Due to this, it's able to gather enough data to report the results on a match (some assumptions given). Look for the **How does it work?** section to get a more in-depth explanation.
 
 ## Requirements
-- [Python (minimum version 3.11)](https://www.python.org/downloads/)
+- [Python (minimum version 3.11 and with Python added to your PATH)](https://www.python.org/downloads/)
 - [OBS (does not necessarily need to be streaming)](https://obsproject.com/download)
 - [Advanced Scene Switcher OBS Plugin](https://github.com/WarmUpTill/SceneSwitcher/releases)
 - A capture card that is able to output the game in 1080p
