@@ -33,8 +33,6 @@ jobs:
         flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
 
     - name: Build with PyInstaller
-      env: 
-        PYTHONPATH: ${{ github.workspace }}
       run: pyinstaller main.spec
 
     - name: Copy config file
