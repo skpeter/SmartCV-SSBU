@@ -12,9 +12,12 @@ It's a project that uses pixel detection to recognize certain situations in the 
 
 
 ## Installation & Setup
-- Download the compiled release [here](https://github.com/skpeter/smartcv/releases).
-- Open a terminal such as `Command Prompt (cmd)` or `bash` and enter the following command:
-- - `pip install easyocr`
+### The binary release is not working at the moment - please run it from source using the instructions below while this is fixed.
+- Download the source code for the project by clicking on the green **Code** button, then selecting **Download ZIP**.
+- Unzip the contents of a terminal at any directory.
+- Open a terminal such as `Command Prompt (cmd)` or `bash` and enter the following commands:
+- - `cd [directory where you unzipped the project]`
+- - `pip install -r requirements.txt`
 - You will also need to install PyTorch, and the command to use depends on your system. Head to Pytorch's "Start Locally" section [here](https://pytorch.org/get-started/locally/), pick the **Stable** build, select the OS you use (**Windows, Mac or Linux**), **Pip** as packaging system, **Python** as language and then select the **Compute Platform** available on your system.
 ![PyTorch installation page](img/install1.jpg)
 - - **Compute Platform** depends on which video card (GPU) you own. Look up your video card's specifications on your manufacturer's website and check out which of the available platforms it supports.
@@ -31,7 +34,7 @@ It's a project that uses pixel detection to recognize certain situations in the 
 - Go to SmartCV's `config.ini` file and set the `feed_path` setting to the path where OBS is saving the screenshots.
 
 ## Usage
-- **All you need to do is open smartcv.exe and follow the on-screen instructions for the game detection to start. Make sure to keep OBS open!** 
+- **All you need to do is open main.py and follow the on-screen instructions for the game detection to start. Make sure to keep OBS open!** 
 
 ## Where do I use this?
 SmartCV opens a websocket server (on port 6565 by default) to send data to.
