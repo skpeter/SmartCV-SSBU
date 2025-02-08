@@ -24,7 +24,6 @@ jobs:
         python -m pip install --upgrade pip
         pip install pyinstaller flake8
         pip install -r requirements.txt
-        pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
 
     - name: Lint with flake8
       run: |
@@ -50,26 +49,5 @@ jobs:
       with:
         repo_token: ${{ secrets.GITHUB_TOKEN }}
         file: dist/release.zip
-        tag: ${{ github.ref }}
-        overwrite: true
-
-    - name: Remove CUDA based dependencies and reinstall CPU based ones for CPU build
-      run: |
-        pip uninstall torch torchvision torchaudio
-        pip install torch torchvision torchaudio
-
-    - name: Build CPU based release
-      run: pyinstaller main.spec --no-confirm
-
-    - name: Create zip file for CPU release
-      run: |
-        cd dist\smartcv
-        powershell Compress-Archive -Path * -DestinationPath ..\release-cpu.zip
-
-    - name: Upload CPU release binaries to release
-      uses: svenstaro/upload-release-action@v2
-      with:
-        repo_token: ${{ secrets.GITHUB_TOKEN }}
-        file: dist/release-cpu.zip
         tag: ${{ github.ref }}
         overwrite: true
