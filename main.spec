@@ -21,11 +21,13 @@ a = Analysis(
         'gc',
         'json',
         'websockets',
-        'asyncio'
+        'asyncio',
+        'easyocr'
+        'torch, torchvision, torchaudio'
     ],
     hookspath=[],
     runtime_hooks=[],
-    excludes=['easyocr', 'torch'],
+    excludes=[],
     win_no_prefer_redirects=False,
     win_private_assemblies=False,
     cipher=block_cipher,

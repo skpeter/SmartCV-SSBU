@@ -1,4 +1,5 @@
 Pillow
 opencv-python
 numpy
-# easyocr
+websockets
+easyocr
