@@ -38,8 +38,9 @@ jobs:
     - name: Copy config file and images
       run: |
         copy config.ini.example dist\smartcv\config.ini
-        copy -r img\GAME.png dist\smartcv\img\GAME.png
-        copy -r img\TIME.png dist\smartcv\img\TIME.png
+        cd img
+        copy -r GAME.png dist\smartcv\img\GAME.png
+        copy -r TIME.png dist\smartcv\img\TIME.png
 
     - name: Create zip file
       run: |
