@@ -138,6 +138,7 @@ def detect_character_select_screen():
     
     if is_within_deviation(pixel, target_color, deviation):
         payload['state'] = "character_select"
+        print("Character select screen detected")
         if payload['state'] != previous_states[-1]:
             previous_states.append(payload['state'])
             #clean up some more player information
