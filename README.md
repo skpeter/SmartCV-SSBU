@@ -31,7 +31,7 @@ It's a project that uses pixel detection to recognize certain situations in the 
 ![Advanced Scene Switcher Setup](img/guide2.jpg)
 - - "SSBU" should be the Video Capture Device source that is using your capture card.
 - - You can set the path to save the screenshot anywhere you'd like (SmartCV must have access to it), but it is **highly recommended** that you save the screenshot as a **WEBP**. This image format causes the least amount of issues and is very lightweight, however if for some reason you can't use WEBPs, you can save it as a JPG instead. 
-- Go to SmartCV's `config.ini` file and set the `feed_path` setting to the path where OBS is saving the screenshots.
+- Go to SmartCV's `config.ini.example` file and set the `feed_path` setting to the path where OBS is saving the screenshots. Rename the file to `config.ini` after.
 
 ## Usage
 - **All you need to do is open main.py and follow the on-screen instructions for the game detection to start. Make sure to keep OBS open!** 
