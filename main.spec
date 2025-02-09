@@ -6,10 +6,6 @@ a = Analysis(
     ['main.py'],
     pathex=['.'],
     binaries=[],
-    datas=[
-        ('img/GAME.png', 'img'),
-        ('img/TIME.png', 'img')
-    ],
     hiddenimports=[
         'configparser',
         'PIL.Image',
