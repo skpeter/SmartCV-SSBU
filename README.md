@@ -14,7 +14,7 @@ It's a project that uses pixel detection to recognize certain situations in the 
 ## Installation & Setup
 ### The binary release is not working at the moment - please run it from source using the instructions below while this is fixed.
 - Download the source code for the project by clicking on the green **Code** button, then selecting **Download ZIP**.
-- Unzip the contents of a terminal at any directory.
+- Unzip the contents of the project at any directory.
 - Open a terminal such as `Command Prompt (cmd)` or `bash` and enter the following commands:
 - - `cd [directory where you unzipped the project]`
 - - `pip install -r requirements.txt`
