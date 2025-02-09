@@ -398,7 +398,7 @@ def run_detection():
         refresh_rate = config.getfloat('settings', 'refresh_rate')
         time.sleep(refresh_rate)
 
-async def send_data(websocket, path):
+async def send_data(websocket):
     global payload, config
     refresh_rate = config.getfloat('settings', 'refresh_rate')
     try:
