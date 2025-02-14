@@ -270,9 +270,7 @@ def detect_taken_stock():
     if all(is_within_deviation(pixel, target_color, deviation) for pixel in pixels):
         s1 = count_stock_numbers(img, (385, 340, 330, 265))
         s2 = count_stock_numbers(img, (1225, 330, 330, 265))
-        sum1 = s1 + s2
-        sum2 = payload['players'][0]['stocks'] + payload['players'][1]['stocks']
-        if sum1 == sum2 - 1: #this ensures data will only be stored if there was only one stock taken. not gained, or lost, or multiple stocks taken
+        if s1 == payload['players'][0]['stocks'] - 1 or s2 == payload['players'][1]['stocks'] - 1: #this ensures data will only be stored if there was only one stock taken. not gained, or lost, or multiple stocks taken
             payload['players'][0]['stocks'] = s1
             payload['players'][1]['stocks'] = s2
             print("Stock taken. Stocks left:", payload['players'][0]['stocks']," - ", payload['players'][1]['stocks'])
