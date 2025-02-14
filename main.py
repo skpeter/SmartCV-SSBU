@@ -35,6 +35,7 @@ payload = {
     ]
 }
 previous_states = [None] # list of previous states to be used for state change detection
+reader = easyocr.Reader(['en'])
 
 def detect_stage_select_screen():
     global config, payload, previous_states
@@ -151,7 +152,7 @@ def detect_character_select_screen():
     return
 
 def read_text(img, region, unskew=False):
-    global payload
+    global payload, reader
     print("Attempting to read text...")
     # Define the area to read
     x, y, w, h = region
@@ -159,10 +160,7 @@ def read_text(img, region, unskew=False):
 
     # Convert stage_img from PIL.Image to cv2
     cropped_img = cv2.cvtColor(np.array(cropped_img), cv2.COLOR_RGB2GRAY)
-    
-    # Initialize the reader
-    reader = easyocr.Reader(['en'])
-    
+        
     # Use OCR to read the text from the image
     result = reader.readtext(cropped_img, paragraph=False)
 
@@ -173,7 +171,7 @@ def read_text(img, region, unskew=False):
     else: result = None
 
     # Release memory
-    del cropped_img, reader
+    del cropped_img
     gc.collect()
 
     return result
@@ -218,17 +216,21 @@ def detect_versus_screen():
             for player in payload['players']:
                 player['stocks'] = 3
             previous_states.append(payload['state'])
-            c1 = read_text(img, (110, 10, 870, 120), True)
-            c1 = findBestMatch(c1, ssbu.characters)
-            print("Player 1 character:", c1)
-            c2 = read_text(img, (1070, 10, 870, 120), True)
-            c2 = findBestMatch(c2, ssbu.characters)
-            print("Player 2 character:", c2)
-            t1 = read_text(img, (5, 155, 240, 50), True)
-            print("Player 1 tag:", t1)
-            t2 = read_text(img, (965, 155, 240, 50), True)
-            print("Player 2 tag:", t2)
-            payload['players'][0]['character'], payload['players'][1]['character'], payload['players'][0]['name'], payload['players'][1]['name'] = c1, c2, t1, t2
+            def read_characters_and_names():
+                # Initialize the reader
+                c1 = read_text(img, (110, 10, 870, 120), True)
+                c1 = findBestMatch(c1, ssbu.characters)
+                print("Player 1 character:", c1)
+                c2 = read_text(img, (1070, 10, 870, 120), True)
+                c2 = findBestMatch(c2, ssbu.characters)
+                print("Player 2 character:", c2)
+                t1 = read_text(img, (5, 155, 240, 50), True)
+                print("Player 1 tag:", t1)
+                t2 = read_text(img, (965, 155, 240, 50), True)
+                print("Player 2 tag:", t2)
+                payload['players'][0]['character'], payload['players'][1]['character'], payload['players'][0]['name'], payload['players'][1]['name'] = c1, c2, t1, t2
+            threading.Thread(target=read_characters_and_names).start()
+            time.sleep(2)
     return img
 
 
@@ -269,21 +271,20 @@ def detect_taken_stock():
         print("Taken stock detected")
         payload['players'][0]['stocks'] = count_stock_numbers(img, (385, 340, 330, 265))
         payload['players'][1]['stocks'] = count_stock_numbers(img, (1225, 330, 330, 265))
-        print("Stocks left:", payload['players'][0]['stocks'], payload['players'][1]['stocks'])
+        print("Stocks left:", payload['players'][0]['stocks']," - ", payload['players'][1]['stocks'])
+        time.sleep(1.25)
 
 def count_stock_numbers(img, region):
     # Define the area to read
+    global reader
     x, y, w, h = region
     stock_img = img.crop((x, y, x + w, y + h))
 
     #convert stock_image from PIL.Image to cv2
     stock_img = cv2.cvtColor(np.array(stock_img), cv2.COLOR_RGB2GRAY)
-    
-    # Initialize the reader
-    reader = easyocr.Reader(['en'])
-    
+        
     # Use OCR to read the text from the image
-    result = reader.readtext(stock_img, paragraph=False, allowlist='123')
+    result = reader.readtext(stock_img, paragraph=False, allowlist='123', contrast_ths=0.7)
     
     # Extract the text
     if result:
@@ -342,16 +343,13 @@ def detect_game_end():
 
     
 def process_game_end_data(main_img):
-    global payload
+    global payload, reader
     # Define the area to read
     x, y, w, h = 510, 920, 145, 80
     p1_damage_img = main_img[y:y+h, x:x+w]
     x, y, w, h = 1250, 920, 145, 80
     p2_damage_img = main_img[y:y+h, x:x+w]
     
-    # Initialize the reader
-    reader = easyocr.Reader(['en'])
-
     results = []
     
     # Use OCR to read the text from the image
@@ -374,7 +372,7 @@ def process_game_end_data(main_img):
             
     
     # Extract and print the text
-    print("Damage read: Player 1: ", payload['players'][0]['damage'], " - Player 2: ", payload['players'][1]['damage'])
+    print("Damage read: Player 1: '", payload['players'][0]['damage'], "' - Player 2: '", payload['players'][1]['damage'], "'")
 
 
 def run_detection():
@@ -387,7 +385,7 @@ def run_detection():
             detect_character_select_screen()
         elif payload['state'] == "character_select":
             detect_stage_select_screen()
-            detect_versus_screen()
+            if payload['players'][0]['character'] == None: detect_versus_screen()
             gc.collect()
         elif payload['state'] == "in_game":
             detect_stage_select_screen()
