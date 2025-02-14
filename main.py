@@ -6,13 +6,17 @@ import cv2
 import numpy as np
 import threading
 import time
-import easyocr
 import gc
 import json
 import websockets
 import asyncio
 import ssbu
 from tag_matching import findBestMatch
+from paddleocr import PaddleOCR
+from ppocr.utils.logging import get_logger
+import logging
+logger = get_logger()
+logger.setLevel(logging.ERROR)
 config = configparser.ConfigParser()
 config.read('config.ini')
 
@@ -161,16 +165,17 @@ def read_text(img, region, unskew=False):
     cropped_img = cv2.cvtColor(np.array(cropped_img), cv2.COLOR_RGB2GRAY)
     
     # Initialize the reader
-    reader = easyocr.Reader(['en'])
+    reader = PaddleOCR(use_angle_cls=True, lang='en')
     
     # Use OCR to read the text from the image
-    result = reader.readtext(cropped_img, paragraph=False)
-
+    result = reader.ocr(cropped_img, cls=True)
+    result = [line[0][1][0] for line in result]
     
     # Extract the text
     if result:
-        result = ' '.join([res[1] for res in result])
-    else: result = None
+        result = ' '.join(result)
+    else:
+        result = None
 
     # Release memory
     del cropped_img, reader
@@ -278,18 +283,20 @@ def count_stock_numbers(img, region):
 
     #convert stock_image from PIL.Image to cv2
     stock_img = cv2.cvtColor(np.array(stock_img), cv2.COLOR_RGB2GRAY)
+    _, stock_img = cv2.threshold(stock_img, 128, 255, cv2.THRESH_BINARY)
     
     # Initialize the reader
-    reader = easyocr.Reader(['en'])
+    reader = PaddleOCR(use_angle_cls=True, lang='en')
     
     # Use OCR to read the text from the image
-    result = reader.readtext(stock_img, paragraph=False, allowlist='123')
+    result = reader.ocr(stock_img, cls=True)
+    print(result)
+    result = [line[0][1][0] for line in result]
     
     # Extract the text
     if result:
-        stock_number = result[0][1]
-        if stock_number.isdigit():
-            return int(stock_number) if int(stock_number) < 4 else 3 if int(stock_number) == 33 else 2 if int(stock_number) == 22 else 1
+        if result.isdigit():
+            return int(result) if int(result) < 4 else 3 if int(result) == 33 else 2 if int(result) == 22 else 1
         return 1 #workaround because OCR fails to read the stock number accurately if it's 1
     return 1 #workaround because OCR fails to read the stock number accurately if it's 1
 
@@ -350,15 +357,18 @@ def process_game_end_data(main_img):
     p2_damage_img = main_img[y:y+h, x:x+w]
     
     # Initialize the reader
-    reader = easyocr.Reader(['en'])
+    reader = PaddleOCR(use_angle_cls=True, lang='en')
 
     results = []
     
     # Use OCR to read the text from the image
-    result = reader.readtext(p1_damage_img)
-    results.append(' '.join([res[1] for res in result]))
-    result = reader.readtext(p2_damage_img)
-    results.append(' '.join([res[1] for res in result]))
+    result = reader.ocr(p1_damage_img, cls=True)
+    result = [line[1][0] for line in result if line[1][0].isdigit()]
+    results.append(''.join(result))
+    
+    result = reader.ocr(p2_damage_img, cls=True)
+    result = [line[1][0] for line in result if line[1][0].isdigit()]
+    results.append(''.join(result))
 
     payload['players'][0]['damage'] = results[0]
     payload['players'][1]['damage'] = results[1]
@@ -421,11 +431,30 @@ def start_websocket_server():
 
     asyncio.run(start_server())
 
+def download_ocr_models():
+    # Create a small blank image
+    blank_image = np.zeros((10, 10, 3), np.uint8)
+
+    # Initialize the PaddleOCR reader
+    reader = PaddleOCR(use_angle_cls=True, lang='en')
+
+    # Make a dummy call to reader.ocr to trigger model download
+    reader.ocr(blank_image, cls=True)
+
 if __name__ == "__main__":
+
+    print("Initializing...")
+
+    # Call the function to download OCR models on startup
+    download_ocr_models()
+
+    print("OCR models downloaded.")
+
     # Start the detection thread
     detection_thread = threading.Thread(target=run_detection)
     detection_thread.daemon = True
     detection_thread.start()
+
     
     # Start the websocket server thread
     websocket_thread = threading.Thread(target=start_websocket_server)
