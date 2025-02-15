@@ -36,6 +36,7 @@ It's a project that uses pixel detection to recognize certain situations in the 
 
 ## Troubleshooting
 - **When I run the app it says a bunch of code that ends with `ModuleNotFoundError: No module named 'torch'"` at the end! What do I do?
+
 Try restarting your system. If that doesn't work, append `py -m` to the code that installs PyTorch. For example: `py -m pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118`
 
 ## Where do I use this?
