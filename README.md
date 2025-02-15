@@ -11,20 +11,16 @@ It's a project that uses pixel detection to recognize certain situations in the 
 - [OBS (does not necessarily need to be streaming)](https://obsproject.com/download)
 - [Advanced Scene Switcher OBS Plugin](https://github.com/WarmUpTill/SceneSwitcher/releases)
 - A capture card that is able to output the game in 1080p
+- Your copy of Super Smash Bros. Ultimate must be in **English** (other languages coming soon)
 
 
 ## Installation & Setup
-### The binary release is not working at the moment - please run it from source using the instructions below while this is fixed.
-- Download the source code for the project by clicking on the green **Code** button, then selecting **Download ZIP**.
-- Unzip the contents of the project at any directory.
-- Open a terminal such as `Command Prompt (cmd)` or `bash` and enter the following commands:
-- - `cd [directory where you unzipped the project]`
-- - `pip install -r requirements.txt`
-- You will also need to install PyTorch, and the command to use depends on your system. Head to Pytorch's "Start Locally" section [here](https://pytorch.org/get-started/locally/), pick the **Stable** build, select the OS you use (**Windows, Mac or Linux**), **Pip** as packaging system, **Python** as language and then select the **Compute Platform** available on your system.
+- Download the compiled release [here](https://github.com/skpeter/smartcv/releases).
+- You will need to install PyTorch, and must run a command on your command prompt/terminal to do so. Head to Pytorch's "Start Locally" section [here](https://pytorch.org/get-started/locally/), pick the **Stable** build, select the OS you use (**Windows, Mac or Linux**), **Pip** as packaging system, **Python** as language and then select the **Compute Platform** available on your system.
 ![PyTorch installation page](img/install1.jpg)
 - - **Compute Platform** depends on which video card (GPU) you own. Look up your video card's specifications on your manufacturer's website and check out which of the available platforms it supports.
 - - If your computer does not support any of the available platforms, you can choose **CPU** (which is going to be slower and use up more resources, but still works).
-- - Choosing these options will generate a command that you should copy and paste on your terminal. PyTorch weighs around 3GB, so take your time.
+- - Choosing these options will generate a command that you should copy and paste on your terminal/command prompt. PyTorch weighs around 3GB, so take your time.
 - SmartCV will read from a separate feed from OBS that will be provided to it. This is where Advanced Scene Switcher comes in. Once you have it installed, open it on the Tools tab:
 
 ![Advanced Scene Switcher Setup](img/guide1.jpg)
@@ -33,10 +29,14 @@ It's a project that uses pixel detection to recognize certain situations in the 
 ![Advanced Scene Switcher Setup](img/guide2.jpg)
 - - "SSBU" should be the Video Capture Device source that is using your capture card.
 - - You can set the path to save the screenshot anywhere you'd like (SmartCV must have access to it), but it is **highly recommended** that you save the screenshot as a **WEBP**. This image format causes the least amount of issues and is very lightweight, however if for some reason you can't use WEBPs, you can save it as a JPG instead. 
-- Go to SmartCV's `config.ini.example` file and set the `feed_path` setting to the path where OBS is saving the screenshots. Rename the file to `config.ini` after.
+- Go to SmartCV's `config.ini` file and set the `feed_path` setting to the path where OBS is saving the screenshots.
 
 ## Usage
-- **All you need to do is open main.py and follow the on-screen instructions for the game detection to start. Make sure to keep OBS open!** 
+- **All you need to do is open smartcv.exe and follow the on-screen instructions for the game detection to start. Make sure to keep OBS open!**
+
+## Troubleshooting
+- **When I run the app it says a bunch of code that ends with `ModuleNotFoundError: No module named 'torch'"` at the end! What do I do?
+Try restarting your system. If that doesn't work, append `py -m` to the code that installs PyTorch. For example: `py -m pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118`
 
 ## Where do I use this?
 SmartCV opens a websocket server (on port 6565 by default) to send data to.
@@ -45,9 +45,7 @@ As of this writing, only [S.M.A.R.T.](https://skpeter.github.io/smart-user-guide
 ## Known Issues
 
 - The app currently is unable to tell from the three different Mii fighter characters (because on the versus screen, they all show up as Mii). A solution is being worked on
-- Stock count recognition is a bit poor and makes mistakes, but the app will still accurately tell who won the match in case all stocks are taken. This may cause complications on timeouts, so it is something that's being looked into.
 - The app doesn't know how to differentiate handwarmers from actual matches. [S.M.A.R.T.](https://skpeter.github.io/smart-user-guide) (the companion app) has a workaround for this at the moment.
-
 
 ## How does it work?
 
