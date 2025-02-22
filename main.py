@@ -395,6 +395,8 @@ def run_detection():
             detect_game_end()
         elif payload['state'] == "game_end":
             detect_stage_select_screen()
+            detect_selected_stage()
+            detect_character_select_screen()
         refresh_rate = config.getfloat('settings', 'refresh_rate')
         time.sleep(refresh_rate)
 
