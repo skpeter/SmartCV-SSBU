@@ -274,7 +274,6 @@ def detect_taken_stock():
             payload['players'][0]['stocks'] = s1
             payload['players'][1]['stocks'] = s2
             print("Stock taken. Stocks left:", payload['players'][0]['stocks']," - ", payload['players'][1]['stocks'])
-            time.sleep(0.5)
 
 def count_stock_numbers(img, region):
     # Define the area to read
