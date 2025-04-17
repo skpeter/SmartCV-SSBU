@@ -108,6 +108,7 @@ def detect_selected_stage():
         stage = read_text(img, (110, 700, 500, 100))
         payload['stage'] = findBestMatch(stage, ssbu.stages)
         print("Selected stage:", payload['stage'])
+        time.sleep(1)
 
 def detect_character_select_screen():
     global config, payload, previous_states
