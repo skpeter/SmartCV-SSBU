@@ -401,13 +401,13 @@ def run_detection():
 
 async def send_data(websocket):
     global payload, config
-    data = json.dumps(payload)
-    size = len(data.encode('utf-8'))
-    if size > 1024 * 1024:  # 1MB
-        print(f"Warning: Large payload size ({size} bytes)")
-    refresh_rate = config.getfloat('settings', 'refresh_rate')
     try:
         while True:
+            data = json.dumps(payload)
+            size = len(data.encode('utf-8'))
+            if size > 1024 * 1024:  # 1MB
+                print(f"Warning: Large payload size ({size} bytes)")
+            refresh_rate = config.getfloat('settings', 'refresh_rate')
             await websocket.send(json.dumps(payload))
             await asyncio.sleep(refresh_rate)
     except websockets.exceptions.ConnectionClosedOK:
