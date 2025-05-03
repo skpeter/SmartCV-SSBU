@@ -27,30 +27,46 @@ jobs:
 
     - name: Lint with flake8
       run: |
-        # stop the build if there are Python syntax errors or undefined names
         flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-        # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
         flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
 
-    - name: Build with PyInstaller
+    # Build CPU version using CPU spec
+    - name: Build CPU version with PyInstaller
       run: pyinstaller main.spec
 
-    - name: Copy config file and images
-      run: |
-        copy config.ini.example dist\smartcv\config.ini
-        mkdir dist\smartcv\img
-        copy -r img\GAME.png dist\smartcv\img\GAME.png
-        copy -r img\TIME.png dist\smartcv\img\TIME.png
-
-    - name: Create zip file
+    - name: Create zip file for CPU build
       run: |
         cd dist\smartcv
-        powershell Compress-Archive -Path * -DestinationPath ..\release.zip
+        powershell Compress-Archive -Path * -DestinationPath ..\release-cpu.zip
 
-    - name: Upload binaries to release
+    # Clean build artifacts before GPU build
+    - name: Clean previous build artifacts
+      run: |
+        if exist build rmdir /s /q build
+        if exist dist rmdir /s /q dist
+        if exist smartcv.spec del smartcv.spec
+
+    # Build GPU version using GPU spec
+    - name: Build GPU version with PyInstaller
+      run: pyinstaller main-gpu.spec
+
+    - name: Create zip file for GPU build
+      run: |
+        cd dist\smartcv
+        powershell Compress-Archive -Path * -DestinationPath ..\release-gpu.zip
+
+    - name: Upload CPU Release artifact
       uses: svenstaro/upload-release-action@v2
       with:
         repo_token: ${{ secrets.GITHUB_TOKEN }}
-        file: dist/release.zip
+        file: release-cpu.zip
+        tag: ${{ github.ref }}
+        overwrite: true
+
+    - name: Upload GPU Release artifact
+      uses: svenstaro/upload-release-action@v2
+      with:
+        repo_token: ${{ secrets.GITHUB_TOKEN }}
+        file: release-gpu.zip
         tag: ${{ github.ref }}
         overwrite: true
