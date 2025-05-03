@@ -427,7 +427,7 @@ def start_websocket_server():
             "localhost",
             config.getint('settings', 'server_port'),
             ping_interval=60,  # Send ping every 20 seconds
-            ping_timeout=45,   # Wait 10 seconds for pong response
+            ping_timeout=90,   # Wait 10 seconds for pong response
             close_timeout=15   # Wait 10 seconds for close handshake
         ):
             await asyncio.Future()  # run forever
