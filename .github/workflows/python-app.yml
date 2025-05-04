@@ -44,10 +44,11 @@ jobs:
 
     # Clean build artifacts before GPU build
     - name: Clean previous build artifacts
+      shell: cmd
       run: |
-        if (exist build) { rmdir /s /q build }
-        if (exist dist) { rmdir /s /q dist }
-        if (exist smartcv.spec) { del smartcv.spec }
+        if exist build rmdir build /s /q
+        if exist dist rmdir dist /s /q
+        if exist smartcv.spec del smartcv.spec
 
     # Install PyTorch GPU dependencies
     - name: Install PyTorch GPU dependencies
@@ -60,9 +61,9 @@ jobs:
       run: pyinstaller main-gpu.spec
 
     - name: Create zip file for GPU build
+      shell: cmd
       run: |
-        cd dist\smartcv
-        "C:\Program Files\7-Zip\7z.exe" a -tzip ..\release-gpu.zip
+        "C:\Program Files\7-Zip\7z.exe" a -tzip ..\release-gpu.zip *
 
     - name: Upload CPU Release artifact
       uses: svenstaro/upload-release-action@v2
