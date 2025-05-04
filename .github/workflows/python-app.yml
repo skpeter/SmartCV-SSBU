@@ -38,9 +38,9 @@ jobs:
       run: choco install 7zip.install -y
 
     - name: Create zip file for CPU build
+      shell: cmd
       run: |
-        cd dist\smartcv
-        cmd /c "\"C:\Program Files\7-Zip\7z.exe\" a -tzip ..\release-cpu.zip *"
+        "C:\Program Files\7-Zip\7z.exe" a -tzip ..\release-cpu.zip *
 
     # Clean build artifacts before GPU build
     - name: Clean previous build artifacts
