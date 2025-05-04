@@ -14,10 +14,10 @@ It's a project that uses pixel detection to recognize certain situations in the 
 
 ## Step 1: Installation
 There are two ways to use SmartCV: one is powered by your CPU and one is powered by your GPU. You might want to pick one or the other if you have a dedicated GPU or your CPU is more powerful.
+
 ### Step 1.1: Installing the CPU version
 - Installing the CPU version is very easy. Just download the compiled release.zip [here](https://github.com/skpeter/smartcv/releases).
-- You can skip from step 2 from here.
-
+- You can skip to step 2 from here.
 ### Step 1.2: Installing the GPU version
 - You will need to download the **source code** zip [here](https://github.com/skpeter/smartcv/releases).
 - Install Python if you haven't done so already [here](https://www.python.org/downloads/). **Recommended version is 3.12**.
