@@ -27,56 +27,27 @@ jobs:
 
     - name: Lint with flake8
       run: |
+        # stop the build if there are Python syntax errors or undefined names
         flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-        flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics      
+        # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
+        flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
 
-    # Build CPU version using CPU spec
-    - name: Build CPU version with PyInstaller
+    - name: Build with PyInstaller
       run: pyinstaller main.spec
 
-    - name: Install 7-Zip
-      run: choco install 7zip.install -y
-
-    - name: Create zip file for CPU build
-      shell: cmd
+    - name: Copy config file and images
       run: |
-        "C:\Program Files\7-Zip\7z.exe" a -tzip ..\release-cpu.zip *
-
-    # Clean build artifacts before GPU build
-    - name: Clean previous build artifacts
-      shell: cmd
+        copy config.ini.example dist\smartcv\config.ini
+        mkdir dist\smartcv\img
+    - name: Create zip file
       run: |
-        if exist build rmdir build /s /q
-        if exist dist rmdir dist /s /q
-        if exist smartcv.spec del smartcv.spec
+        cd dist\smartcv
+        powershell Compress-Archive -Path * -DestinationPath ..\release.zip
 
-    # Install PyTorch GPU dependencies
-    - name: Install PyTorch GPU dependencies
-      run: |
-        pip uninstall torch torchvision torchaudio --yes
-        pip install torch torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cu118
-
-    # Build GPU version using GPU spec
-    - name: Build GPU version with PyInstaller
-      run: pyinstaller main-gpu.spec
-
-    - name: Create zip file for GPU build
-      shell: cmd
-      run: |
-        "C:\Program Files\7-Zip\7z.exe" a -tzip ..\release-gpu.zip *
-
-    - name: Upload CPU Release artifact
+    - name: Upload binaries to release
       uses: svenstaro/upload-release-action@v2
       with:
         repo_token: ${{ secrets.GITHUB_TOKEN }}
-        file: release-cpu.zip
-        tag: ${{ github.ref }}
-        overwrite: true
-
-    - name: Upload GPU Release artifact
-      uses: svenstaro/upload-release-action@v2
-      with:
-        repo_token: ${{ secrets.GITHUB_TOKEN }}
-        file: release-gpu.zip
+        file: dist/release.zip
         tag: ${{ github.ref }}
         overwrite: true
