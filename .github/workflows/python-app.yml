@@ -42,9 +42,9 @@ jobs:
     # Clean build artifacts before GPU build
     - name: Clean previous build artifacts
       run: |
-        if (exist build) { rmdir /s /q build }
-        if (exist dist) { rmdir /s /q dist }
-        if (exist smartcv.spec) { del smartcv.spec }
+        if (Test-Path build) { Remove-Item -Recurse -Force build }
+        if (Test-Path dist) { Remove-Item -Recurse -Force dist }
+        if (Test-Path smartcv.spec) { Remove-Item -Force smartcv.spec }
 
     # Install PyTorch GPU dependencies
     - name: Install PyTorch GPU dependencies
