@@ -9,7 +9,6 @@ It's a project that uses pixel detection to recognize certain situations in the 
 ## Requirements
 - [OBS (does not necessarily need to be streaming)](https://obsproject.com/download)
 - [Advanced Scene Switcher OBS Plugin](https://github.com/WarmUpTill/SceneSwitcher/releases)
-- A capture card that is able to output the game in 1080p
 - Your copy of Super Smash Bros. Ultimate must be in **English** (other languages coming soon)
 
 ## Step 1: Installation
