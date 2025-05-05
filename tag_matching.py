@@ -69,7 +69,7 @@ def doFuzzyMatch(s1: str, s2: str, p=0.1):
     prefix_len = min(prefix_len, 4)  # Common prefix length should not exceed 4
     return jaro_sim + (prefix_len * p * (1 - jaro_sim))
 
-def findBestMatch(s: str, candidates: list, p=0.1):
+def findBestMatch(s: str, candidates: list[str], p=0.1):
     """
     Find the string in the list of candidates that has the highest Jaro-Winkler similarity to the input string.
     """
@@ -82,4 +82,4 @@ def findBestMatch(s: str, candidates: list, p=0.1):
             highest_similarity = similarity
             best_match = candidate
     
-    return best_match
+    return best_match, highest_similarity

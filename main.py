@@ -42,6 +42,9 @@ payload = {
 previous_states = [None] # list of previous states to be used for state change detection
 reader = easyocr.Reader(['en'])
 
+def is_within_deviation(color1, color2, deviation):
+    return all(abs(c1 - c2) / 255.0 <= deviation for c1, c2 in zip(color1, color2))
+
 def detect_stage_select_screen():
     global config, payload, previous_states, feed_path
 
@@ -63,10 +66,6 @@ def detect_stage_select_screen():
     target_color1 = (85, 98, 107)  # #55626b in RGB
     target_color2 = (200, 0, 0)   # #a50215 in RGB
     deviation = 0.1
-    
-    # Check if the pixel color is within the deviation range
-    def is_within_deviation(color1, color2, deviation):
-        return all(abs(c1 - c2) / 255.0 <= deviation for c1, c2 in zip(color1, color2))
     
     if is_within_deviation(pixel1, target_color1, deviation) and is_within_deviation(pixel2, target_color2, deviation):
         print("Stage select screen detected")
@@ -101,15 +100,11 @@ def detect_selected_stage():
     # Define the target color and deviation
     target_color = (75, 5, 7)  # #4b0507 in RGB
     deviation = 0.1
-    
-    # Check if the pixel color is within the deviation range
-    def is_within_deviation(color1, color2, deviation):
-        return all(abs(c1 - c2) / 255.0 <= deviation for c1, c2 in zip(color1, color2))
-    
+        
     if is_within_deviation(pixel, target_color, deviation):
         print("Stage selected")
         stage = read_text(img, (int(110 * scale_x), int(700 * scale_y), int(500 * scale_x), int(100 * scale_y)))
-        payload['stage'] = findBestMatch(stage, ssbu.stages)
+        payload['stage'], _ = findBestMatch(stage, ssbu.stages)
         print("Selected stage:", payload['stage'])
         time.sleep(1)
 
@@ -133,10 +128,6 @@ def detect_character_select_screen():
     target_color = (230, 208, 24)  # #e6d018 in RGB
     deviation = 0.1
     
-    # Check if the pixel color is within the deviation range
-    def is_within_deviation(color1, color2, deviation):
-        return all(abs(c1 - c2) / 255.0 <= deviation for c1, c2 in zip(color1, color2))
-    
     if is_within_deviation(pixel, target_color, deviation):
         payload['state'] = "character_select"
         print("Character select screen detected")
@@ -153,7 +144,7 @@ def detect_character_select_screen():
 
 def read_text(img, region, unskew=False):
     global payload, reader
-    print("Attempting to read text...")
+    # print("Reading text...")
     # Define the area to read
     x, y, w, h = region
     cropped_img = img.crop((x, y, x + w, y + h))
@@ -199,10 +190,6 @@ def detect_versus_screen():
 
     deviation = 0.2
     
-    # Check if the pixel color is within the deviation range
-    def is_within_deviation(color1, color2, deviation):
-        return all(abs(c1 - c2) / 255.0 <= deviation for c1, c2 in zip(color1, color2))
-    
     if is_within_deviation(pixel, target_color, deviation) and is_within_deviation(pixel2, target_color2, deviation):
         print("Versus screen detected")
         payload['state'] = "in_game"
@@ -214,10 +201,16 @@ def detect_versus_screen():
             def read_characters_and_names():
                 # Initialize the reader
                 c1 = read_text(img, (int(110 * scale_x), int(10 * scale_y), int(870 * scale_x), int(120 * scale_y)), True)
-                c1 = findBestMatch(c1, ssbu.characters)
+                c1, score = findBestMatch(c1, ssbu.characters)
+                if score < 0.75:
+                    # Character is most likely a Mii
+                    c1 = do_mii_recognition(img, 1, scale_x, scale_y)
                 print("Player 1 character:", c1)
                 c2 = read_text(img, (int(1070 * scale_x), int(10 * scale_y), int(870 * scale_x), int(120 * scale_y)), True)
-                c2 = findBestMatch(c2, ssbu.characters)
+                c2, score = findBestMatch(c2, ssbu.characters)
+                if score < 0.75:
+                    # Character is most likely a Mii
+                    c2 = do_mii_recognition(img, 2, scale_x, scale_y)
                 print("Player 2 character:", c2)
                 t1 = read_text(img, (int(5 * scale_x), int(155 * scale_y), int(240 * scale_x), int(50 * scale_y)), True)
                 print("Player 1 tag:", t1)
@@ -228,6 +221,27 @@ def detect_versus_screen():
             time.sleep(2)
     return img
 
+def do_mii_recognition(img, player: int, scale_x, scale_y):
+    result = None
+    offset_x = 0 if player == 1 else int(960 * scale_x)
+    brawler_pixel = img.getpixel((int(190 * scale_x + offset_x), int(550 * scale_y))) # his left gauntlet
+    gunner_pixel = img.getpixel((int(840 * scale_x + offset_x), int(770 * scale_y))) # the corner of her vest
+    swordfighter_pixel = img.getpixel((int(334 * scale_x + offset_x), int(789 * scale_y))) # above his belt
+
+    # Define the target colors and deviation
+    brawler_color = (253, 46, 45) # #55626b in RGB
+    gunner_color = (240, 175, 58) # #f0af3a in RGB
+    swordfighter_color = (22, 63, 148) # #163f94 in RGB
+    deviation = 0.1
+    
+    if is_within_deviation(brawler_pixel, brawler_color, deviation):
+        result = "Mii Brawler"
+    elif is_within_deviation(gunner_pixel, gunner_color, deviation):
+        result = "Mii Gunner"
+    elif is_within_deviation(swordfighter_pixel, swordfighter_color, deviation):
+        result = "Mii Swordfighter"
+
+    return result
 
 
 def detect_taken_stock():
@@ -251,10 +265,6 @@ def detect_taken_stock():
     # Define the target color and deviation
     target_color = (255, 255, 255)  # #ffffff in RGB
     deviation = 0.1
-    
-    # Check if the region is filled with the target color within the deviation range
-    def is_within_deviation(color1, color2, deviation):
-        return all(abs(c1 - c2) / 255.0 <= deviation for c1, c2 in zip(color1, color2))
     
     pixels = region.getdata()
     if all(is_within_deviation(pixel, target_color, deviation) for pixel in pixels):
@@ -303,6 +313,11 @@ def detect_game_end():
             if "image file is truncated" in str(e):
                 time.sleep(0.25)
                 continue
+        except AttributeError as e:
+            if "shape" in str(e):
+                time.sleep(0.25)
+                continue
+
             else:
                 raise e
 
