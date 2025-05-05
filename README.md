@@ -50,7 +50,6 @@ As of this writing, only [S.M.A.R.T.](https://skpeter.github.io/smart-user-guide
 
 ## Known Issues
 
-- The app currently is unable to tell from the three different Mii fighter characters (because on the versus screen, they all show up as Mii). A solution is being worked on
 - The app doesn't know how to differentiate handwarmers from actual matches. [S.M.A.R.T.](https://skpeter.github.io/smart-user-guide) (the companion app) has a workaround for this at the moment.
 
 ## How does it work?
