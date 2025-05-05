@@ -35,8 +35,9 @@ SmartCV will read from a separate feed from OBS that will be provided to it. Thi
 - - You can set the path to save the screenshot anywhere you'd like (SmartCV must have access to it), but it is **highly recommended** that you save the screenshot as a **WEBP**. This image format causes the least amount of issues and is very lightweight, however if for some reason you can't use WEBPs, you can save it as a JPG instead. 
 - Go to SmartCV's `config.ini` file and set the `feed_path` setting to the path where OBS is saving the screenshots.
 
-## Usage
-**All you need to do is open smartcv.exe and follow the on-screen instructions for the game detection to start**
+## Step 3: Usage
+- To open the GPU version of the app, open the `main.py` file with Python. Otherwise to run the CPU version just run `smartcv.exe`.
+**From here all you need to do is follow the on-screen instructions for the game detection to start.**
 **Make sure to keep OBS open and do not disable the game capture source!**
 
 ## Troubleshooting
