@@ -12,9 +12,14 @@ import json
 import websockets
 import asyncio
 import ssbu
+import traceback
 from tag_matching import findBestMatch
 config = configparser.ConfigParser()
 config.read('config.ini')
+# Get the feed path from the config file
+feed_path = config.get('settings', 'feed_path')
+base_width = 1920
+base_height = 1080
 
 payload = {
     "state": None,
@@ -38,18 +43,14 @@ previous_states = [None] # list of previous states to be used for state change d
 reader = easyocr.Reader(['en'])
 
 def detect_stage_select_screen():
-    global config, payload, previous_states
-    # Read the config file
-    
-    # Get the feed path from the config file
-    feed_path = config.get('settings', 'feed_path')
+    global config, payload, previous_states, feed_path
 
     while True:
         try:
             # Verify the image
-            img = Image.open(feed_path)  # Reopen the image after verification
-            pixel1 = img.getpixel((596, 698))
-            pixel2 = img.getpixel((1842, 54))
+            img, scale_x, scale_y = capture_screen()
+            pixel1 = img.getpixel((int(596 * scale_x), int(698 * scale_y)))
+            pixel2 = img.getpixel((int(1842 * scale_x), int(54 * scale_y)))
             break
         except (OSError, Image.UnidentifiedImageError) as e:
             if "truncated" in str(e) or "cannot identify image file" in str(e) or "could not create decoder object" in str(e):
@@ -75,18 +76,20 @@ def detect_stage_select_screen():
             # reset payload to original values
             payload['stage'] = None
 
+def capture_screen():
+    img = Image.open(feed_path)
+    actual_width, actual_height = img.size  # Reopen the image after verification
+    scale_x = actual_width / base_width
+    scale_y = actual_height / base_height
+    return img,scale_x,scale_y
+
 def detect_selected_stage():
-    global config, payload, previous_states
-    # Read the config file
-    
-    # Get the feed path from the config file
-    feed_path = config.get('settings', 'feed_path')
+    global config, payload, previous_states, feed_path
     
     while True:
         try:
-            # Open the image
-            img = Image.open(feed_path)
-            pixel = img.getpixel((1842, 54))
+            img, scale_x, scale_y = capture_screen()
+            pixel = img.getpixel((int(1842 * scale_x), int(54 * scale_y)))
             break
         except (OSError, Image.UnidentifiedImageError) as e:
             if "truncated" in str(e) or "cannot identify image file" in str(e) or "could not create decoder object" in str(e):
@@ -105,23 +108,19 @@ def detect_selected_stage():
     
     if is_within_deviation(pixel, target_color, deviation):
         print("Stage selected")
-        stage = read_text(img, (110, 700, 500, 100))
+        stage = read_text(img, (int(110 * scale_x), int(700 * scale_y), int(500 * scale_x), int(100 * scale_y)))
         payload['stage'] = findBestMatch(stage, ssbu.stages)
         print("Selected stage:", payload['stage'])
         time.sleep(1)
 
 def detect_character_select_screen():
-    global config, payload, previous_states
-    # Read the config file
-    
-    # Get the feed path from the config file
-    feed_path = config.get('settings', 'feed_path')
+    global config, payload, previous_states, feed_path
     
     while True:
         try:
             # Open the image
-            img = Image.open(feed_path)
-            pixel = img.getpixel((433, 36))
+            img, scale_x, scale_y = capture_screen()
+            pixel = img.getpixel((int(433 * scale_x), int(36 * scale_y)))
             break
         except (OSError, Image.UnidentifiedImageError) as e:
             if "truncated" in str(e) or "cannot identify image file" in str(e) or "could not create decoder object" in str(e):
@@ -178,18 +177,13 @@ def read_text(img, region, unskew=False):
     return result
 
 def detect_versus_screen():
-    global config, payload, previous_states
-    # Read the config file
-    
-    # Get the feed path from the config file
-    feed_path = config.get('settings', 'feed_path')
+    global config, payload, previous_states, feed_path
     
     while True:
         try:
-            # Open the image
-            img = Image.open(feed_path)
-            pixel = img.getpixel((30, 69))
-            pixel2 = img.getpixel((1040, 55))
+            img, scale_x, scale_y = capture_screen()
+            pixel = img.getpixel((int(30 * scale_x), int(69 * scale_y)))
+            pixel2 = img.getpixel((int(1040 * scale_x), int(55 * scale_y)))
             break
         except (OSError, Image.UnidentifiedImageError) as e:
             if "truncated" in str(e) or "cannot identify image file" in str(e) or "could not create decoder object" in str(e):
@@ -219,15 +213,15 @@ def detect_versus_screen():
             previous_states.append(payload['state'])
             def read_characters_and_names():
                 # Initialize the reader
-                c1 = read_text(img, (110, 10, 870, 120), True)
+                c1 = read_text(img, (int(110 * scale_x), int(10 * scale_y), int(870 * scale_x), int(120 * scale_y)), True)
                 c1 = findBestMatch(c1, ssbu.characters)
                 print("Player 1 character:", c1)
-                c2 = read_text(img, (1070, 10, 870, 120), True)
+                c2 = read_text(img, (int(1070 * scale_x), int(10 * scale_y), int(870 * scale_x), int(120 * scale_y)), True)
                 c2 = findBestMatch(c2, ssbu.characters)
                 print("Player 2 character:", c2)
-                t1 = read_text(img, (5, 155, 240, 50), True)
+                t1 = read_text(img, (int(5 * scale_x), int(155 * scale_y), int(240 * scale_x), int(50 * scale_y)), True)
                 print("Player 1 tag:", t1)
-                t2 = read_text(img, (965, 155, 240, 50), True)
+                t2 = read_text(img, (int(965 * scale_x), int(155 * scale_y), int(240 * scale_x), int(50 * scale_y)), True)
                 print("Player 2 tag:", t2)
                 payload['players'][0]['character'], payload['players'][1]['character'], payload['players'][0]['name'], payload['players'][1]['name'] = c1, c2, t1, t2
             threading.Thread(target=read_characters_and_names).start()
@@ -237,16 +231,11 @@ def detect_versus_screen():
 
 
 def detect_taken_stock():
-    global config, payload, previous_states
-    # Read the config file
-    
-    # Get the feed path from the config file
-    feed_path = config.get('settings', 'feed_path')
+    global config, payload, previous_states, feed_path
     
     while True:
         try:
-            # Open the image
-            img = Image.open(feed_path)
+            img, scale_x, scale_y = capture_screen()
             break
         except (OSError, Image.UnidentifiedImageError) as e:
             if "truncated" in str(e) or "cannot identify image file" in str(e) or "could not create decoder object" in str(e):
@@ -256,7 +245,7 @@ def detect_taken_stock():
                 raise e
     
     # Define the region to check
-    x, y, w, h = 905, 445, 105, 40
+    x, y, w, h = int(905 * scale_x), int(445 * scale_y), int(105 * scale_x), int(40 * scale_y)
     region = img.crop((x, y, x + w, y + h))
     
     # Define the target color and deviation
@@ -269,8 +258,8 @@ def detect_taken_stock():
     
     pixels = region.getdata()
     if all(is_within_deviation(pixel, target_color, deviation) for pixel in pixels):
-        s1 = count_stock_numbers(img, (385, 340, 330, 265))
-        s2 = count_stock_numbers(img, (1225, 330, 330, 265))
+        s1 = count_stock_numbers(img, (int(385 * scale_x), int(340 * scale_y), int(330 * scale_x), int(265 * scale_y)))
+        s2 = count_stock_numbers(img, (int(1225 * scale_x), int(330 * scale_y), int(330 * scale_x), int(265 * scale_y)))
         if s1 == payload['players'][0]['stocks'] - 1 or s2 == payload['players'][1]['stocks'] - 1: #this ensures data will only be stored if there was only one stock taken. not gained, or lost, or multiple stocks taken
             payload['players'][0]['stocks'] = s1
             payload['players'][1]['stocks'] = s2
@@ -293,20 +282,19 @@ def count_stock_numbers(img, region):
         stock_number = result[0][1]
         if stock_number.isdigit():
             return int(stock_number) if int(stock_number) < 4 else 3 if int(stock_number) == 33 else 2 if int(stock_number) == 22 else 1
-        return 1 #workaround because OCR fails to read the stock number accurately if it's 1
-    return 1 #workaround because OCR fails to read the stock number accurately if it's 1
+        return 1 # workaround because OCR fails to read the stock number accurately if it's 1
+    return 1 # workaround because OCR fails to read the stock number accurately if it's 1
 
 def detect_game_end():
-    global config, payload, previous_states
-    # Read the config file
-    
-    # Get the feed path from the config file
-    feed_path = config.get('settings', 'feed_path')
+    global config, payload, previous_states, base_width, base_height, feed_path
     
     while True:
         try:
             # Load the main image
             main_img = cv2.imread(feed_path, cv2.IMREAD_GRAYSCALE)
+            height, width = main_img.shape
+            scale_x = width / base_width
+            scale_y = height / base_height
             if main_img is None:
                 time.sleep(0.25)
                 continue #image may be corrupted, try again
@@ -320,7 +308,7 @@ def detect_game_end():
 
     
     # Crop the specific area
-    x, y, w, h = 312, 225, 1300, 445
+    x, y, w, h = int(312 * scale_x), int(225 * scale_y), int(1300 * scale_x), int(445 * scale_y)
     cropped_img = main_img[y:y+h, x:x+w]
     
     # Load the template images
@@ -338,18 +326,18 @@ def detect_game_end():
     threshold = 0.5
     if np.max(res_game) >= threshold or np.max(res_time) >= threshold:
         print("Game end detected")
-        process_game_end_data(main_img)
+        process_game_end_data(main_img, scale_x, scale_y)
         payload['state'] = "game_end"
         if payload['state'] != previous_states[-1]:
             previous_states.append(payload['state'])
 
     
-def process_game_end_data(main_img):
+def process_game_end_data(main_img, scale_x, scale_y):
     global payload, reader
     # Define the area to read
-    x, y, w, h = 510, 920, 145, 80
+    x, y, w, h = int(510 * scale_x), int(920 * scale_y), int(145 * scale_x), int(80 * scale_y)
     p1_damage_img = main_img[y:y+h, x:x+w]
-    x, y, w, h = 1250, 920, 145, 80
+    x, y, w, h = int(1250 * scale_x), int(920 * scale_y), int(145 * scale_x), int(80 * scale_y)
     p2_damage_img = main_img[y:y+h, x:x+w]
     
     results = []
@@ -378,26 +366,31 @@ def process_game_end_data(main_img):
 
 
 def run_detection():
-    global payload, previous_states
+    global payload, previous_states, feed_path
     while True:
-        if payload['state'] == None:
-            detect_stage_select_screen()
-        elif payload['state'] == "stage_select":
-            detect_selected_stage()
-            detect_character_select_screen()
-        elif payload['state'] == "character_select":
-            detect_stage_select_screen()
-            if payload['players'][0]['character'] == None: detect_versus_screen()
-            gc.collect()
-        elif payload['state'] == "in_game":
-            detect_stage_select_screen()
-            detect_taken_stock()
-            detect_game_end()
-        elif payload['state'] == "game_end":
-            detect_stage_select_screen()
-            detect_selected_stage()
-            detect_character_select_screen()
-        refresh_rate = config.getfloat('settings', 'refresh_rate')
+        try:
+            if payload['state'] == None:
+                detect_stage_select_screen()
+            elif payload['state'] == "stage_select":
+                detect_selected_stage()
+                detect_character_select_screen()
+            elif payload['state'] == "character_select":
+                detect_stage_select_screen()
+                if payload['players'][0]['character'] == None: detect_versus_screen()
+                gc.collect()
+            elif payload['state'] == "in_game":
+                detect_stage_select_screen()
+                detect_taken_stock()
+                detect_game_end()
+            elif payload['state'] == "game_end":
+                detect_stage_select_screen()
+                detect_selected_stage()
+                detect_character_select_screen()
+            refresh_rate = config.getfloat('settings', 'refresh_rate')
+        except Exception as e:
+            print(f"Error: {str(e)}")
+            print("Stack trace:")
+            print(traceback.format_exc())
         time.sleep(refresh_rate)
 
 async def send_data(websocket):
