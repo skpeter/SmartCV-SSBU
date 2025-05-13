@@ -66,7 +66,9 @@ def detect_stage_select_screen():
     target_color1 = (85, 98, 107)  # #55626b in RGB
     target_color2 = (200, 0, 0)   # #a50215 in RGB
     deviation = 0.1
-    
+    if config.getboolean('settings', 'debug_mode', fallback=False) == True:
+        print("Got 1st color code ", pixel1, " at function detect_selected_stage")
+        print("Got 2nd color code ", pixel2, " at function detect_selected_stage")
     if is_within_deviation(pixel1, target_color1, deviation) and is_within_deviation(pixel2, target_color2, deviation):
         print("Stage select screen detected")
         payload['state'] = "stage_select"
@@ -74,6 +76,9 @@ def detect_stage_select_screen():
             previous_states.append(payload['state'])
             # reset payload to original values
             payload['stage'] = None
+    else:
+        if config.getboolean('settings', 'debug_mode', fallback=False) == True:
+            print("No match on color code, not on stage select screen")
 
 def capture_screen():
     img = Image.open(feed_path)
@@ -101,12 +106,17 @@ def detect_selected_stage():
     target_color = (75, 5, 7)  # #4b0507 in RGB
     deviation = 0.1
         
+    if config.getboolean('settings', 'debug_mode', fallback=False) == True:
+        print("Got color code ", pixel, " at function detect_selected_stage")
     if is_within_deviation(pixel, target_color, deviation):
         print("Stage selected")
         stage = read_text(img, (int(110 * scale_x), int(700 * scale_y), int(500 * scale_x), int(100 * scale_y)))
         payload['stage'], _ = findBestMatch(stage, ssbu.stages)
         print("Selected stage:", payload['stage'])
         time.sleep(1)
+    else:
+        if config.getboolean('settings', 'debug_mode', fallback=False) == True:
+            print("No match on color code, stage select not detected")
 
 def detect_character_select_screen():
     global config, payload, previous_states, feed_path
@@ -127,7 +137,8 @@ def detect_character_select_screen():
     # Define the target color and deviation
     target_color = (230, 208, 24)  # #e6d018 in RGB
     deviation = 0.1
-    
+    if config.getboolean('settings', 'debug_mode', fallback=False) == True:
+        print("Got color code ", pixel, " at function detect_selected_stage")
     if is_within_deviation(pixel, target_color, deviation):
         payload['state'] = "character_select"
         print("Character select screen detected")
@@ -139,7 +150,9 @@ def detect_character_select_screen():
                 player['damage'] = None
                 player['character'] = None
                 player['name'] = None
-
+    else:
+        if config.getboolean('settings', 'debug_mode', fallback=False) == True:
+            print("No match on color code, not on character select screen")
     return
 
 def read_text(img, region, unskew=False):
@@ -190,6 +203,8 @@ def detect_versus_screen():
 
     deviation = 0.2
     
+    if config.getboolean('settings', 'debug_mode', fallback=False) == True:
+        print("Got color code ", pixel, " at function detect_selected_stage")
     if is_within_deviation(pixel, target_color, deviation) and is_within_deviation(pixel2, target_color2, deviation):
         print("Versus screen detected")
         payload['state'] = "in_game"
@@ -219,6 +234,9 @@ def detect_versus_screen():
                 payload['players'][0]['character'], payload['players'][1]['character'], payload['players'][0]['name'], payload['players'][1]['name'] = c1, c2, t1, t2
             threading.Thread(target=read_characters_and_names).start()
             time.sleep(2)
+    else:
+        if config.getboolean('settings', 'debug_mode', fallback=False) == True:
+            print("No match on color code, VS Screen not detected")
     return img
 
 def do_mii_recognition(img, player: int, scale_x, scale_y):
@@ -233,7 +251,12 @@ def do_mii_recognition(img, player: int, scale_x, scale_y):
     gunner_color = (240, 175, 58) # #f0af3a in RGB
     swordfighter_color = (22, 63, 148) # #163f94 in RGB
     deviation = 0.1
-    
+    if config.getboolean('settings', 'debug_mode', fallback=False) == True:
+        print("Got color code ", brawler_color, " at function detect_selected_stage")
+    if config.getboolean('settings', 'debug_mode', fallback=False) == True:
+        print("Got color code ", gunner_color, " at function detect_selected_stage")
+    if config.getboolean('settings', 'debug_mode', fallback=False) == True:
+        print("Got color code ", swordfighter_color, " at function detect_selected_stage")
     if is_within_deviation(brawler_pixel, brawler_color, deviation):
         result = "Mii Brawler"
     elif is_within_deviation(gunner_pixel, gunner_color, deviation):
@@ -267,6 +290,8 @@ def detect_taken_stock():
     deviation = 0.1
     
     pixels = region.getdata()
+    if config.getboolean('settings', 'debug_mode', fallback=False) == True:
+        print("Got color code ", target_color, " at function detect_selected_stage")
     if all(is_within_deviation(pixel, target_color, deviation) for pixel in pixels):
         s1 = count_stock_numbers(img, (int(385 * scale_x), int(340 * scale_y), int(330 * scale_x), int(265 * scale_y)))
         s2 = count_stock_numbers(img, (int(1225 * scale_x), int(330 * scale_y), int(330 * scale_x), int(265 * scale_y)))
@@ -274,6 +299,9 @@ def detect_taken_stock():
             payload['players'][0]['stocks'] = s1
             payload['players'][1]['stocks'] = s2
             print("Stock taken. Stocks left:", payload['players'][0]['stocks']," - ", payload['players'][1]['stocks'])
+    else:
+        if config.getboolean('settings', 'debug_mode', fallback=False) == True:
+            print("No match on color code, stock taking not detected")
 
 def count_stock_numbers(img, region):
     # Define the area to read
@@ -339,12 +367,18 @@ def detect_game_end():
     
     # Check if the maximum correlation coefficient exceeds the threshold
     threshold = 0.5
+    if config.getboolean('settings', 'debug_mode', fallback=False) == True:
+        print("Game template matching result: ", res_game)
+        print("Time template matching result: ", res_time)
     if np.max(res_game) >= threshold or np.max(res_time) >= threshold:
         print("Game end detected")
         process_game_end_data(main_img, scale_x, scale_y)
         payload['state'] = "game_end"
         if payload['state'] != previous_states[-1]:
             previous_states.append(payload['state'])
+    else:
+        if config.getboolean('settings', 'debug_mode', fallback=False) == True:
+            print("No match on template, game end not detected")
 
     
 def process_game_end_data(main_img, scale_x, scale_y):
