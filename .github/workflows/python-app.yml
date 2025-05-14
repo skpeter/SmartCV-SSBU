@@ -39,6 +39,8 @@ jobs:
       run: |
         copy config.ini.example dist\smartcv\config.ini
         mkdir dist\smartcv\img
+        copy img\GAME.png dist\smartcv\img
+        copy img\TIME.png dist\smartcv\img
     - name: Create zip file
       run: |
         cd dist\smartcv
