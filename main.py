@@ -67,8 +67,8 @@ def detect_stage_select_screen():
     target_color2 = (200, 0, 0)   # #a50215 in RGB
     deviation = 0.1
     if config.getboolean('settings', 'debug_mode', fallback=False) == True:
-        print("Got 1st color code ", pixel1, " at function detect_selected_stage")
-        print("Got 2nd color code ", pixel2, " at function detect_selected_stage")
+        print("Got 1st color code ", pixel1, " at function detect_stage_select_screen")
+        print("Got 2nd color code ", pixel2, " at function detect_stage_select_screen")
     if is_within_deviation(pixel1, target_color1, deviation) and is_within_deviation(pixel2, target_color2, deviation):
         print("Stage select screen detected")
         payload['state'] = "stage_select"
@@ -107,7 +107,7 @@ def detect_selected_stage():
     deviation = 0.1
         
     if config.getboolean('settings', 'debug_mode', fallback=False) == True:
-        print("Got color code ", pixel, " at function detect_selected_stage")
+        print("Got color code ", pixel, " at function detect_versus_screen")
     if is_within_deviation(pixel, target_color, deviation):
         print("Stage selected")
         stage = read_text(img, (int(110 * scale_x), int(700 * scale_y), int(500 * scale_x), int(100 * scale_y)))
@@ -138,7 +138,7 @@ def detect_character_select_screen():
     target_color = (230, 208, 24)  # #e6d018 in RGB
     deviation = 0.1
     if config.getboolean('settings', 'debug_mode', fallback=False) == True:
-        print("Got color code ", pixel, " at function detect_selected_stage")
+        print("Got color code ", pixel, " at function detect_character_select_screen")
     if is_within_deviation(pixel, target_color, deviation):
         payload['state'] = "character_select"
         print("Character select screen detected")
@@ -200,12 +200,14 @@ def detect_versus_screen():
 
     target_color = (251, 53, 51)  # #FB3533 in RGB
     target_color2 = (33, 140, 254)  # #218CFE in RGB
+    target_color3 = (255, 194, 33)  # #FFC221 in RGB
+    target_color4 = (41, 176, 80)  # #29B050 in RGB
 
     deviation = 0.2
     
     if config.getboolean('settings', 'debug_mode', fallback=False) == True:
         print("Got color code ", pixel, " at function detect_selected_stage")
-    if is_within_deviation(pixel, target_color, deviation) and is_within_deviation(pixel2, target_color2, deviation):
+    if (is_within_deviation(pixel, target_color, deviation) or is_within_deviation(pixel, target_color2, deviation) or is_within_deviation(pixel, target_color3, deviation)) and (is_within_deviation(pixel2, target_color2, deviation) or is_within_deviation(pixel2, target_color3, deviation) or is_within_deviation(pixel2, target_color4, deviation)):
         print("Versus screen detected")
         payload['state'] = "in_game"
         if payload['state'] != previous_states[-1]:
@@ -252,11 +254,11 @@ def do_mii_recognition(img, player: int, scale_x, scale_y):
     swordfighter_color = (22, 63, 148) # #163f94 in RGB
     deviation = 0.1
     if config.getboolean('settings', 'debug_mode', fallback=False) == True:
-        print("Got color code ", brawler_color, " at function detect_selected_stage")
+        print("Got color code ", brawler_color, " at function do_mii_recognition")
     if config.getboolean('settings', 'debug_mode', fallback=False) == True:
-        print("Got color code ", gunner_color, " at function detect_selected_stage")
+        print("Got color code ", gunner_color, " at function do_mii_recognition")
     if config.getboolean('settings', 'debug_mode', fallback=False) == True:
-        print("Got color code ", swordfighter_color, " at function detect_selected_stage")
+        print("Got color code ", swordfighter_color, " at function do_mii_recognition")
     if is_within_deviation(brawler_pixel, brawler_color, deviation):
         result = "Mii Brawler"
     elif is_within_deviation(gunner_pixel, gunner_color, deviation):
@@ -291,7 +293,7 @@ def detect_taken_stock():
     
     pixels = region.getdata()
     if config.getboolean('settings', 'debug_mode', fallback=False) == True:
-        print("Got color code ", target_color, " at function detect_selected_stage")
+        print("Got color code ", target_color, " at function detect_taken_stock")
     if all(is_within_deviation(pixel, target_color, deviation) for pixel in pixels):
         s1 = count_stock_numbers(img, (int(385 * scale_x), int(340 * scale_y), int(330 * scale_x), int(265 * scale_y)))
         s2 = count_stock_numbers(img, (int(1225 * scale_x), int(330 * scale_y), int(330 * scale_x), int(265 * scale_y)))
