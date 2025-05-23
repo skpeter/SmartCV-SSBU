@@ -1,6 +1,6 @@
 # SmartCV-SSBU
 
-https://private-user-images.githubusercontent.com/5069283/413506990-12d6dce4-c682-4383-b398-babea2d320bb.mp4
+https://github.com/user-attachments/assets/f1c46930-3639-43b1-b6b0-a7d512f58d5a
 
 SmartCV-SSBU is a tool designed to provide data on Super Smash Bros. Ultimate matches without the need for installing mods on your Nintendo Switch, or the need for a powerful PC to read game data in real time. 
 
