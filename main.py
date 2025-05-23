@@ -182,7 +182,8 @@ def read_text(img, region, unskew=False):
 
 def detect_versus_screen():
     global config, payload, previous_states, feed_path
-    
+    if payload['players'][0]['character'] == None: return
+
     while True:
         try:
             img, scale_x, scale_y = capture_screen()
@@ -421,21 +422,23 @@ def run_detection():
     while True:
         try:
             if payload['state'] == None:
-                detect_stage_select_screen()
+                if not config.getboolean('settings', 'disable_stage_selection'): detect_stage_select_screen()
+                else: detect_character_select_screen()
             elif payload['state'] == "stage_select":
-                detect_selected_stage()
+                if not config.getboolean('settings', 'disable_stage_selection'): detect_selected_stage()
                 detect_character_select_screen()
             elif payload['state'] == "character_select":
-                detect_stage_select_screen()
-                if payload['players'][0]['character'] == None: detect_versus_screen()
+                if not config.getboolean('settings', 'disable_stage_selection'): detect_stage_select_screen()
+                detect_versus_screen()
                 gc.collect()
             elif payload['state'] == "in_game":
-                detect_stage_select_screen()
+                if not config.getboolean('settings', 'disable_stage_selection'): detect_stage_select_screen()
                 detect_taken_stock()
                 detect_game_end()
             elif payload['state'] == "game_end":
-                detect_stage_select_screen()
-                detect_selected_stage()
+                if not config.getboolean('settings', 'disable_stage_selection'):
+                    detect_stage_select_screen()
+                    detect_selected_stage()
                 detect_character_select_screen()
             refresh_rate = config.getfloat('settings', 'refresh_rate')
         except Exception as e:
