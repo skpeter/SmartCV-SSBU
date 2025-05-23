@@ -5,5 +5,7 @@ server_port = 6565
 feed_path = C:/Users/USER/Videos/OBS/feed.webp
 ;debug_mode = Set to "true" to enable debugging messages that allow for detection of errors.
 debug_mode = false
+;disable_stage_selection = Set to "true" to disable stage selection.
+disable_stage_selection = false
 ;refresh_rate = Should be kept to 0.5 seconds. How often the script will check for changes in the feed image.
 refresh_rate = 0.5
