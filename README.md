@@ -11,9 +11,7 @@ It's a project that uses pixel detection to recognize certain situations in the 
 - [Advanced Scene Switcher OBS Plugin](https://github.com/WarmUpTill/SceneSwitcher/releases)
 - Your copy of Super Smash Bros. Ultimate must be in **English** (other languages coming soon)
 
-## Step 1: Installation
-There are two ways to use SmartCV: one is powered by your CPU and one is powered by your GPU. You might want to pick one or the other if you have a dedicated GPU or your CPU is more powerful.
-
+## Installation
 ### Step 1.1: Installing the CPU version
 - Installing the CPU version is very easy. Just download the compiled release.zip [here](https://github.com/skpeter/smartcv/releases).
 - You can skip to step 2 from here.
@@ -24,7 +22,7 @@ There are two ways to use SmartCV: one is powered by your CPU and one is powered
 ![PyTorch installation page](img/install1.jpg)
 - - Choosing these options will generate a command that you should copy and paste on your terminal/command prompt. PyTorch weighs around 3GB, so take your time.
 
-## Step 2: Setup
+### Step 2: Setup
 SmartCV will read from a separate feed from OBS that will be provided to it. This is where Advanced Scene Switcher comes in. Once you have it installed, open it on the Tools tab:
 ![Advanced Scene Switcher Setup](img/guide1.jpg)
 - On the window that opens, go to the Macros tab and click on the plus sign to add a new macro (you can name it anything you want). Click on the other plus signs to add a condition and an action to this macro. I've attached a screenshot so you can mimic the settings:
@@ -34,7 +32,7 @@ SmartCV will read from a separate feed from OBS that will be provided to it. Thi
 - - You can set the path to save the screenshot anywhere you'd like (SmartCV must have access to it), but it is **highly recommended** that you save the screenshot as a **WEBP**. This image format causes the least amount of issues and is very lightweight, however if for some reason you can't use WEBPs, you can save it as a JPG instead. 
 - Go to SmartCV's `config.ini` file and set the `feed_path` setting to the path where OBS is saving the screenshots.
 
-## Step 3: Usage
+### Step 3: Usage
 - To open the GPU version of the app, open the `main.py` file with Python. Otherwise to run the CPU version just run `smartcv.exe`.
 **From here all you need to do is follow the on-screen instructions for the game detection to start.**
 **Make sure to keep OBS open and do not disable the game capture source!**
