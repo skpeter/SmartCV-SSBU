@@ -459,11 +459,10 @@ async def send_data(websocket):
             await websocket.send(json.dumps(payload))
             await asyncio.sleep(refresh_rate)
     except websockets.exceptions.ConnectionClosedOK:
-        # print("Connection closed normally by client")
         pass
     except websockets.exceptions.ConnectionClosedError as e:
+        if "no close frame received or sent" in str(e): pass
         print(f"Connection closed with error: {e}")
-        pass
     except Exception as e:
         print(f"Unexpected error: {e}")
 
@@ -473,9 +472,9 @@ def start_websocket_server():
             send_data,
             "localhost",
             config.getint('settings', 'server_port'),
-            ping_interval=60,  # Send ping every 20 seconds
-            ping_timeout=90,   # Wait 10 seconds for pong response
-            close_timeout=15   # Wait 10 seconds for close handshake
+            ping_interval=60,  # Send ping every 60 seconds
+            ping_timeout=90,   # Wait 90 seconds for pong response
+            close_timeout=15   # Wait 15 seconds for close handshake
         ):
             await asyncio.Future()  # run forever
 
