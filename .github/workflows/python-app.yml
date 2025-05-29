@@ -48,7 +48,7 @@ jobs:
 
     - name: Delete existing release (if any)
       run: |
-        gh release delete release-${{ github.ref_name }} --yes || echo "No release to delete"
+        gh release delete release-${{ github.ref_name }} --yes || true
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
