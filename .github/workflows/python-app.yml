@@ -46,11 +46,10 @@ jobs:
         cd dist\smartcv
         powershell Compress-Archive -Path * -DestinationPath ..\release.zip
 
-    - name: Delete existing release (if any)
+    - name: Update release tag to latest commit
       run: |
-        gh release delete release-${{ github.ref_name }} --yes || true
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        git tag -f release-${{ github.ref_name }}
+        git push origin -f release-${{ github.ref_name }}
 
     - name: Upload binaries to release
       uses: svenstaro/upload-release-action@v2
