@@ -46,7 +46,6 @@ def is_within_deviation(color1, color2, deviation):
     return all(abs(c1 - c2) / 255.0 <= deviation for c1, c2 in zip(color1, color2))
 
 def detect_stage_select_screen():
-    global config, payload, previous_states, feed_path
 
     while True:
         try:
@@ -87,9 +86,7 @@ def capture_screen():
     scale_y = actual_height / base_height
     return img,scale_x,scale_y
 
-def detect_selected_stage():
-    global config, payload, previous_states, feed_path
-    
+def detect_selected_stage():    
     while True:
         try:
             img, scale_x, scale_y = capture_screen()
@@ -119,8 +116,6 @@ def detect_selected_stage():
             print("No match on color code, stage select not detected")
 
 def detect_character_select_screen():
-    global config, payload, previous_states, feed_path
-    
     while True:
         try:
             # Open the image
@@ -155,8 +150,7 @@ def detect_character_select_screen():
             print("No match on color code, not on character select screen")
     return
 
-def read_text(img, region, unskew=False):
-    global payload, reader
+def read_text(img, region):
     # print("Reading text...")
     # Define the area to read
     x, y, w, h = region
@@ -181,7 +175,6 @@ def read_text(img, region, unskew=False):
     return result
 
 def detect_versus_screen():
-    global config, payload, previous_states, feed_path
     if payload['players'][0]['character'] == None: return
 
     while True:
@@ -270,9 +263,7 @@ def do_mii_recognition(img, player: int, scale_x, scale_y):
     return result
 
 
-def detect_taken_stock():
-    global config, payload, previous_states, feed_path
-    
+def detect_taken_stock():    
     while True:
         try:
             img, scale_x, scale_y = capture_screen()
@@ -307,8 +298,6 @@ def detect_taken_stock():
             print("No match on color code, stock taking not detected")
 
 def count_stock_numbers(img, region):
-    # Define the area to read
-    global reader
     x, y, w, h = region
     stock_img = img.crop((x, y, x + w, y + h))
 
@@ -331,31 +320,20 @@ def detect_game_end():
     
     while True:
         try:
-            # Load the main image
-            main_img = cv2.imread(feed_path, cv2.IMREAD_GRAYSCALE)
-            height, width = main_img.shape
-            scale_x = width / base_width
-            scale_y = height / base_height
-            if main_img is None:
-                time.sleep(0.25)
-                continue #image may be corrupted, try again
+            main_img, scale_x, scale_y = capture_screen()
             break
-        except OSError as e:
-            if "image file is truncated" in str(e):
+        except (OSError, Image.UnidentifiedImageError) as e:
+            if "truncated" in str(e) or "cannot identify image file" in str(e) or "could not create decoder object" in str(e):
                 time.sleep(0.25)
                 continue
-        except AttributeError as e:
-            if "shape" in str(e):
-                time.sleep(0.25)
-                continue
-
             else:
                 raise e
 
     
     # Crop the specific area
     x, y, w, h = int(312 * scale_x), int(225 * scale_y), int(1300 * scale_x), int(445 * scale_y)
-    cropped_img = main_img[y:y+h, x:x+w]
+    cropped_img = main_img.crop((x, y, x + w, y + h))
+    cropped_img = cv2.cvtColor(np.array(cropped_img), cv2.COLOR_RGB2GRAY)
     
     # Load the template images
     game_template = cv2.imread('img/GAME.png', cv2.IMREAD_GRAYSCALE)
@@ -385,7 +363,6 @@ def detect_game_end():
 
     
 def process_game_end_data(main_img, scale_x, scale_y):
-    global payload, reader
     # Define the area to read
     x, y, w, h = int(510 * scale_x), int(920 * scale_y), int(145 * scale_x), int(80 * scale_y)
     p1_damage_img = main_img[y:y+h, x:x+w]
@@ -418,7 +395,6 @@ def process_game_end_data(main_img, scale_x, scale_y):
 
 
 def run_detection():
-    global payload, previous_states, feed_path
     while True:
         try:
             if payload['state'] == None:
@@ -448,7 +424,6 @@ def run_detection():
         time.sleep(refresh_rate)
 
 async def send_data(websocket):
-    global payload, config
     try:
         while True:
             data = json.dumps(payload)
