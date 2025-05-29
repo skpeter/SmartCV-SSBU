@@ -38,7 +38,7 @@ jobs:
         flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
 
     - name: Build with PyInstaller
-      run: pyinstaller main.spec --onefile --clean --noconfirm
+      run: pyinstaller main.spec --clean --noconfirm
 
     - name: Copy config file and images
       run: |
