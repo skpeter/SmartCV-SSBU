@@ -18,8 +18,8 @@ a = Analysis(
         'json',
         'websockets',
         'asyncio',
-        'easyocr'
-        'torch, torchvision, torchaudio'
+        'easyocr',
+        'torch', 'torchvision', 'torchaudio'
     ],
     hookspath=[],
     runtime_hooks=[],
