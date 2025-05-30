@@ -21,6 +21,9 @@ jobs:
       with:
         python-version: '3.12'
 
+    - name: Install UPX (Windows)
+      run: choco install upx
+
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
@@ -35,7 +38,7 @@ jobs:
         flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
 
     - name: Build with PyInstaller
-      run: pyinstaller main.spec
+      run: pyinstaller main.spec --clean --noconfirm
 
     - name: Copy config file and images
       run: |
