@@ -43,7 +43,7 @@ exe = EXE(
     bootloader_ignore_signals=False,
     strip=False,
     upx=True,
-    upx_exclude=['python312.dll'],
+    upx_exclude=[],
     runtime_tmpdir=None,
     disable_windowed_traceback=False,
     argv_emulation=False,
@@ -61,6 +61,6 @@ coll = COLLECT(
     a.datas,
     strip=False,
     upx=True,
-    upx_exclude=['python312.dll'],
+    upx_exclude=[],
     name='smartcv'
 )
