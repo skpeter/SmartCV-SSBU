@@ -445,7 +445,7 @@ def start_websocket_server():
     async def start_server():
         async with websockets.serve(
             send_data,
-            "localhost",
+            "0.0.0.0",
             config.getint('settings', 'server_port'),
             ping_interval=60,  # Send ping every 60 seconds
             ping_timeout=90,   # Wait 90 seconds for pong response
