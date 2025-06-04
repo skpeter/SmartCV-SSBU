@@ -1,12 +1,8 @@
-core.print_with_time("Initializing...")
+client_name = "smartcv-ssbu"
 import configparser
-from PIL import Image, ImageFile
-ImageFile.LOAD_TRUNCATED_IMAGES=True
-import cv2
-import numpy as np
 import threading
 import time
-import gc
+import numpy as np
 import ssbu
 import core.core as core
 from core.matching import findBestMatch
@@ -16,6 +12,7 @@ config.read('config.ini')
 feed_path = config.get('settings', 'feed_path')
 base_width = 1920
 base_height = 1080
+previous_states = [None]
 
 payload = {
     "state": None,
@@ -36,7 +33,7 @@ payload = {
     ]
 }
 
-def detect_stage_select_screen():
+def detect_stage_select_screen(payload:dict):
     img, scale_x, scale_y = core.capture_screen()
     pixel1 = img.getpixel((int(596 * scale_x), int(698 * scale_y)))
     pixel2 = img.getpixel((int(1842 * scale_x), int(54 * scale_y)))
@@ -47,19 +44,24 @@ def detect_stage_select_screen():
     deviation = 0.1
     if config.getboolean('settings', 'debug_mode', fallback=False) == True:
         core.print_with_time("Got 1st color code ", pixel1, " at function detect_stage_select_screen")
-        core.print_with_time("Got 2nd color code ", pixel2, " at function detect_stage_select_screen")
+        core.print_with_time("Got 2nd color code ", pixel2, " at function detect_stage_select_screen -", end=' ')
     if core.is_within_deviation(pixel1, target_color1, deviation) and core.is_within_deviation(pixel2, target_color2, deviation):
-        core.print_with_time("Stage select screen detected")
+        print("Stage select screen detected")
         payload['state'] = "stage_select"
         if payload['state'] != previous_states[-1]:
             previous_states.append(payload['state'])
             # reset payload to original values
-            payload['stage'] = None
+            #clean up some more player information
+            for player in payload['players']:
+                player['stocks'] = None
+                player['damage'] = None
+                player['character'] = None
+                player['name'] = None
     else:
         if config.getboolean('settings', 'debug_mode', fallback=False) == True:
-            core.print_with_time("No match on color code, not on stage select screen")
+            print("No match")
 
-def detect_selected_stage():    
+def detect_selected_stage(payload:dict):    
     img, scale_x, scale_y = core.capture_screen()
     pixel = img.getpixel((int(1842 * scale_x), int(54 * scale_y)))
     
@@ -68,18 +70,17 @@ def detect_selected_stage():
     deviation = 0.1
         
     if config.getboolean('settings', 'debug_mode', fallback=False) == True:
-        core.print_with_time("Got color code ", pixel, " at function detect_versus_screen")
+        core.print_with_time("Got color code ", pixel, " at function detect_selected_stage -", end=' ')
     if core.is_within_deviation(pixel, target_color, deviation):
-        core.print_with_time("Stage selected")
         stage = core.read_text(img, (int(110 * scale_x), int(700 * scale_y), int(500 * scale_x), int(100 * scale_y)))
-        payload['stage'], _ = findBestMatch(stage, ssbu.stages)
-        core.print_with_time("Selected stage:", payload['stage'])
+        if stage: payload['stage'], _ = findBestMatch(stage, ssbu.stages)
+        print("Selected stage:", payload['stage'])
         time.sleep(1)
     else:
         if config.getboolean('settings', 'debug_mode', fallback=False) == True:
-            core.print_with_time("No match on color code, stage select not detected")
+            print("No match")
 
-def detect_character_select_screen():
+def detect_character_select_screen(payload:dict):
     img, scale_x, scale_y = core.capture_screen()
     pixel = img.getpixel((int(433 * scale_x), int(36 * scale_y)))
     
@@ -87,10 +88,10 @@ def detect_character_select_screen():
     target_color = (230, 208, 24)  # #e6d018 in RGB
     deviation = 0.1
     if config.getboolean('settings', 'debug_mode', fallback=False) == True:
-        core.print_with_time("Got color code ", pixel, " at function detect_character_select_screen")
+        core.print_with_time("Got color code ", pixel, " at function detect_character_select_screen -", end=' ')
     if core.is_within_deviation(pixel, target_color, deviation):
         payload['state'] = "character_select"
-        core.print_with_time("Character select screen detected")
+        print("Character select screen detected")
         if payload['state'] != previous_states[-1]:
             previous_states.append(payload['state'])
             #clean up some more player information
@@ -101,11 +102,11 @@ def detect_character_select_screen():
                 player['name'] = None
     else:
         if config.getboolean('settings', 'debug_mode', fallback=False) == True:
-            core.print_with_time("No match on color code, not on character select screen")
+            print("No match")
     return
 
-def detect_versus_screen():
-    if payload['players'][0]['character'] == None: return
+def detect_versus_screen(payload:dict):
+    if payload['players'][0]['character']: return
 
     img, scale_x, scale_y = core.capture_screen()
     pixel = img.getpixel((int(30 * scale_x), int(69 * scale_y)))
@@ -121,16 +122,16 @@ def detect_versus_screen():
     deviation = 0.2
     
     if config.getboolean('settings', 'debug_mode', fallback=False) == True:
-        core.print_with_time("Got color code ", pixel, " at function detect_selected_stage")
+        core.print_with_time("Got color code ", pixel, " at function detect_versus_screen -", end=' ')
     if (core.is_within_deviation(pixel, target_color, deviation) or core.is_within_deviation(pixel, target_color2, deviation) or core.is_within_deviation(pixel, target_color3, deviation)) and (core.is_within_deviation(pixel2, target_color2, deviation) or core.is_within_deviation(pixel2, target_color3, deviation) or core.is_within_deviation(pixel2, target_color4, deviation)):
-        core.print_with_time("Versus screen detected")
+        print("Versus screen detected")
         payload['state'] = "in_game"
         if payload['state'] != previous_states[-1]:
             #set initial game data, both players have 3 stocks
             for player in payload['players']:
                 player['stocks'] = 3
             previous_states.append(payload['state'])
-            def read_characters_and_names():
+            def read_characters_and_names(payload:dict):
                 # Initialize the reader
                 c1 = core.read_text(img, (int(110 * scale_x), int(10 * scale_y), int(870 * scale_x), int(120 * scale_y)))
                 c1, score = findBestMatch(c1, ssbu.characters)
@@ -149,11 +150,11 @@ def detect_versus_screen():
                 t2 = core.read_text(img, (int(965 * scale_x), int(155 * scale_y), int(240 * scale_x), int(50 * scale_y)))
                 core.print_with_time("Player 2 tag:", t2)
                 payload['players'][0]['character'], payload['players'][1]['character'], payload['players'][0]['name'], payload['players'][1]['name'] = c1, c2, t1, t2
-            threading.Thread(target=read_characters_and_names).start()
+            threading.Thread(target=read_characters_and_names, args=(payload,)).start()
             time.sleep(2)
     else:
         if config.getboolean('settings', 'debug_mode', fallback=False) == True:
-            core.print_with_time("No match on color code, VS Screen not detected")
+            print("No match")
     return img
 
 def do_mii_recognition(img, player: int, scale_x, scale_y):
@@ -184,45 +185,40 @@ def do_mii_recognition(img, player: int, scale_x, scale_y):
     return result
 
 
-def detect_taken_stock():    
+def detect_taken_stock(payload:dict):    
     img, scale_x, scale_y = core.capture_screen()
     
     # Define the region to check
-    x, y, w, h = int(905 * scale_x), int(445 * scale_y), int(105 * scale_x), int(40 * scale_y)
-    region = img.crop((x, y, x + w, y + h))
-    
-    # Define the target color and deviation
+    region = int(905 * scale_x), int(445 * scale_y), int(105 * scale_x), int(40 * scale_y)
     target_color = (255, 255, 255)  # #ffffff in RGB
     deviation = 0.1
     
-    pixels = region.getdata()
     if config.getboolean('settings', 'debug_mode', fallback=False) == True:
-        core.print_with_time("Got color code ", target_color, " at function detect_taken_stock")
-    if all(core.is_within_deviation(pixel, target_color, deviation) for pixel in pixels):
-        s1 = count_stock_numbers(img, (int(385 * scale_x), int(340 * scale_y), int(330 * scale_x), int(265 * scale_y)))
-        s2 = count_stock_numbers(img, (int(1225 * scale_x), int(330 * scale_y), int(330 * scale_x), int(265 * scale_y)))
-        if s1 == payload['players'][0]['stocks'] - 1 or s2 == payload['players'][1]['stocks'] - 1: #this ensures data will only be stored if there was only one stock taken. not gained, or lost, or multiple stocks taken
-            payload['players'][0]['stocks'] = s1
-            payload['players'][1]['stocks'] = s2
-            core.print_with_time("Stock taken. Stocks left:", payload['players'][0]['stocks']," - ", payload['players'][1]['stocks'])
+        core.print_with_time("Color region confidence: ",core.get_color_match_in_region(img, region, target_color, deviation), " at function detect_taken_stock -", end=' ')
+    if core.get_color_match_in_region(img, region, target_color, deviation) >= 0.9:
+        
+        img = np.array(img)
+        x,y,w,h = (400, int(340 * scale_y), int(1250 * scale_x), int(265 * scale_y))
+        img = img[int(y):int(y+h), int(x):int(x+w)]
+        img = core.crop_image_y(img, (int(300 * scale_x), int(850 * scale_x)))
+        stocks = count_stock_numbers(img)
+        if len(stocks) == 2:
+            payload['players'][0]['stocks'] = stocks[0]
+            payload['players'][1]['stocks'] = stocks[1]
+            print("Stock taken. Stocks left:", payload['players'][0]['stocks']," - ", payload['players'][1]['stocks'])
     else:
         if config.getboolean('settings', 'debug_mode', fallback=False) == True:
-            core.print_with_time("No match on color code, stock taking not detected")
+            print("No match")
 
-def count_stock_numbers(img, region):        
-    # Use OCR to read the text from the image
-    result = core.read_text(img, region, paragraph=False, allowlist='123', contrast_ths=0.7)
-    
-    # Extract the text
-    if result:
-        stock_number = result.split(' ')[0]
-        return int(stock_number) if int(stock_number) < 4 else 3 if int(stock_number) == 33 else 2 if int(stock_number) == 22 else 1
-    return 1 # workaround because OCR fails to read the stock number accurately if it's 1
+def count_stock_numbers(img):
+    result = core.read_text(img, allowlist='123', low_text=0.3)
+    if not result or len(result) < 2: return [None]
+    result = [int(x) for x in str(result) if x.isdigit()]
+    if len(result) > 2: result = core.remove_neighbor_duplicates(result)
+    return result
 
-def detect_game_end():
-    global config, payload, previous_states, base_width, base_height, feed_path
+def detect_game_end(payload:dict):
     img, scale_x, scale_y = core.capture_screen()
-
     
     # Crop the specific area
     x, y, w, h = int(312 * scale_x), int(225 * scale_y), int(1300 * scale_x), int(445 * scale_y)
@@ -232,46 +228,64 @@ def detect_game_end():
     # Check if the maximum correlation coefficient exceeds the threshold
     threshold = 0.5
     if config.getboolean('settings', 'debug_mode', fallback=False) == True:
-        core.print_with_time("Game template matching result:", match_score1)
-        core.print_with_time("Time template matching result:", match_score2)
+        core.print_with_time("Game template matching results:", match_score1, match_score2, end=' ')
     if match_score1 >= threshold or match_score1 >= threshold:
-        core.print_with_time("Game end detected")
+        print("Game end detected")
         process_game_end_data(img, scale_x, scale_y)
         payload['state'] = "game_end"
         if payload['state'] != previous_states[-1]:
             previous_states.append(payload['state'])
     else:
         if config.getboolean('settings', 'debug_mode', fallback=False) == True:
-            core.print_with_time("No match on template, game end not detected")
+            print("No match")
 
     
 def process_game_end_data(img, scale_x, scale_y):
-    # Define the area to read
     x, y, w, h = int(510 * scale_x), int(920 * scale_y), int(145 * scale_x), int(80 * scale_y)
-    p1_damage_img = img[y:y+h, x:x+w]
     x1, y2, w2, h2 = int(1250 * scale_x), int(920 * scale_y), int(145 * scale_x), int(80 * scale_y)
-    p2_damage_img = img[y:y+h, x:x+w]
     
     results = []
     
-    # Use OCR to read the text from the image
-    result = core.read_text(p1_damage_img, (x, y, w, h))
-    results.append(' '.join([res[1] for res in result]))
-    result = core.read_text(p2_damage_img, (x, y, w, h))
-    results.append(' '.join([res[1] for res in result]))
+    results = []
+    results.append(core.read_text(img, (x, y, w, h), allowlist="0123456789%"))
+    results.append(core.read_text(img, (x1, y2, w2, h2), allowlist="0123456789%"))
 
-    payload['players'][0]['damage'] = results[0]
-    payload['players'][1]['damage'] = results[1]
+    payload['players'][0]['damage'] = results[0].replace("%", "") if results[0] else results[0]
+    payload['players'][1]['damage'] = results[1].replace("%", "") if results[1] else results[1]
 
     # if player has one stock left and the damage recognizes as an empty string, they've lost all of their stocks.
     for player in payload['players']:
-        if player['stocks'] < 3 and player['damage'] == '':
+        if player['stocks'] and player['stocks'] < 3 and player['damage'] in ['', None]:
             player['stocks'] = 0
-            core.print_with_time(str(player['name']) + " has lost all of their stocks")
+            core.print_with_time(str(player['name']), "has lost all of their stocks - ", end='')
             for player in payload['players']:
-                if player['damage'] != '':
-                    core.print_with_time(str(player['name']) + " Wins!")
-            
+                if player['damage'] not in ['', None]:
+                    print(str(player['name']), "wins!")
+    if config.getboolean('settings', 'debug_mode', fallback=False) == True:
+        core.print_with_time(f"Results - Player 1: '{payload['players'][0]['damage']}' - Player 2: '{payload['players'][1]['damage']}'")
     
-    # Extract and print the text
-    core.print_with_time("Damage read: Player 1: '", payload['players'][0]['damage'], "' - Player 2: '", payload['players'][1]['damage'], "'")
+    
+states_to_functions = {
+    None: [
+        detect_stage_select_screen
+        if not config.getboolean('settings', 'disable_stage_selection', fallback=False)
+        else detect_character_select_screen
+    ],
+    "stage_select": [
+        detect_selected_stage if not config.getboolean('settings', 'disable_stage_selection', fallback=False) else None,
+        detect_character_select_screen,
+    ],
+    "character_select": [
+        detect_versus_screen,
+        detect_stage_select_screen if not config.getboolean('settings', 'disable_stage_selection', fallback=False) else None
+    ],
+    "in_game": [
+        detect_taken_stock, detect_game_end,
+        detect_stage_select_screen if not config.getboolean('settings', 'disable_stage_selection', fallback=False) else None
+    ],
+    "game_end": [
+        detect_stage_select_screen if not config.getboolean('settings', 'disable_stage_selection', fallback=False) else None,
+        detect_selected_stage if not config.getboolean('settings', 'disable_stage_selection', fallback=False) else None,
+        detect_character_select_screen
+    ]
+}

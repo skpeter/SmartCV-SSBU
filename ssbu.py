@@ -207,5 +207,6 @@ stages = [
   "Small Battlefield",
   "Northern Cave",
   "Hollow Bastion",
+  "Random",
   ""
 ]
