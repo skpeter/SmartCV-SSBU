@@ -1,0 +1,27 @@
+on:
+  schedule:
+    - cron: '0 * * * *'
+  push:
+    branches:
+      - main
+
+jobs:
+  check-submodule:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Check for submodule update
+        run: |
+          git submodule update --remote
+          git status
+
+      - name: Commit submodule update if needed
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          git add core
+          git commit -m "Bump up core" || echo "No changes"
+          git push || echo "No push needed"
