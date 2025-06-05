@@ -250,19 +250,20 @@ def process_game_end_data(img, scale_x, scale_y):
     results.append(core.read_text(img, (x, y, w, h), allowlist="0123456789%"))
     results.append(core.read_text(img, (x1, y2, w2, h2), allowlist="0123456789%"))
 
-    payload['players'][0]['damage'] = results[0].replace("%", "") if results[0] else results[0]
-    payload['players'][1]['damage'] = results[1].replace("%", "") if results[1] else results[1]
+    payload['players'][0]['damage'] = results[0]
+    payload['players'][1]['damage'] = results[1]
 
     # if player has one stock left and the damage recognizes as an empty string, they've lost all of their stocks.
     for player in payload['players']:
-        if player['stocks'] and player['stocks'] < 3 and player['damage'] in ['', None]:
+        if player['stocks'] and player['stocks'] < 3 and player['damage'] in ['',' ',None]:
             player['stocks'] = 0
             core.print_with_time(str(player['name']), "has lost all of their stocks - ", end='')
             for player in payload['players']:
-                if player['damage'] not in ['', None]:
+                if player['damage'] not in ['',' ',None]:
                     print(str(player['name']), "wins!")
+                    player['damage'].replace("%", "")
     if config.getboolean('settings', 'debug_mode', fallback=False) == True:
-        core.print_with_time(f"Results - Player 1: '{payload['players'][0]['damage']}' - Player 2: '{payload['players'][1]['damage']}'")
+        core.print_with_time(f"Damage count - Player 1: '{payload['players'][0]['damage']}' - Player 2: '{payload['players'][1]['damage']}'")
     
     
 states_to_functions = {
