@@ -55,8 +55,8 @@ jobs:
       run: |
         $path = "dist\smartcv\config.ini"
         (Get-Content $path) | ForEach-Object {
-          if ($_ -match '^\s*enable_dialog\s*=') {
-            "enable_dialog = false"
+          if ($_ -match '^\s*capture_mode\s*=') {
+            "capture_mode = obs"
           } else {
             $_
           }
