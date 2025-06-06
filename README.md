@@ -18,6 +18,7 @@ It's a project that uses pixel detection to recognize certain situations in the 
 ### Step 1.2: Installing the GPU version
 - You will need to download the **source code** zip [here](https://github.com/skpeter/smartcv/releases).
 - Install Python if you haven't done so already [here](https://www.python.org/downloads/). **Recommended version is 3.12**.
+- Open a command prompt terminal on the installed directory and type `pip install -r requirements.txt`
 - You will need to then install PyTorch, which is done through command prompt/terminal. Go to Pytorch's "Start Locally" section [here](https://pytorch.org/get-started/locally/), pick the **Stable** build, select the OS you use (**Windows, Mac or Linux**), **Pip** as packaging system, **Python** as language and then select the **Compute Platform** available on your GPU. You can check which version of CUDA your GPU supports [here](https://en.wikipedia.org/wiki/CUDA#GPUs_supported).
 ![PyTorch installation page](img/install1.jpg)
 - - Choosing these options will generate a command that you should copy and paste on your terminal/command prompt. PyTorch weighs around 3GB, so take your time.
