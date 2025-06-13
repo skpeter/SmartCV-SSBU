@@ -33,7 +33,7 @@ payload = {
     ]
 }
 
-def detect_stage_select_screen(payload:dict):
+def detect_stage_select_screen(payload:dict, img, scale_x:float, scale_y:float):
     img, scale_x, scale_y = core.capture_screen()
     pixel1 = img.getpixel((int(596 * scale_x), int(698 * scale_y)))
     pixel2 = img.getpixel((int(1842 * scale_x), int(54 * scale_y)))
@@ -61,7 +61,7 @@ def detect_stage_select_screen(payload:dict):
         if config.getboolean('settings', 'debug_mode', fallback=False) == True:
             print("No match")
 
-def detect_selected_stage(payload:dict):    
+def detect_selected_stage(payload:dict, img, scale_x:float, scale_y:float):    
     img, scale_x, scale_y = core.capture_screen()
     pixel = img.getpixel((int(1842 * scale_x), int(54 * scale_y)))
     
@@ -80,7 +80,7 @@ def detect_selected_stage(payload:dict):
         if config.getboolean('settings', 'debug_mode', fallback=False) == True:
             print("No match")
 
-def detect_character_select_screen(payload:dict):
+def detect_character_select_screen(payload:dict, img, scale_x:float, scale_y:float):
     img, scale_x, scale_y = core.capture_screen()
     pixel = img.getpixel((int(433 * scale_x), int(36 * scale_y)))
     
@@ -105,7 +105,7 @@ def detect_character_select_screen(payload:dict):
             print("No match")
     return
 
-def detect_versus_screen(payload:dict):
+def detect_versus_screen(payload:dict, img, scale_x:float, scale_y:float):
     if payload['players'][0]['character']: return
 
     img, scale_x, scale_y = core.capture_screen()
@@ -131,7 +131,7 @@ def detect_versus_screen(payload:dict):
             for player in payload['players']:
                 player['stocks'] = 3
             previous_states.append(payload['state'])
-            def read_characters_and_names(payload:dict):
+            def read_characters_and_names(payload:dict, img, scale_x:float, scale_y:float):
                 # Initialize the reader
                 c1 = core.read_text(img, (int(110 * scale_x), int(10 * scale_y), int(870 * scale_x), int(120 * scale_y)))
                 c1, score = findBestMatch(c1, ssbu.characters)
@@ -150,7 +150,7 @@ def detect_versus_screen(payload:dict):
                 t2 = core.read_text(img, (int(965 * scale_x), int(155 * scale_y), int(240 * scale_x), int(50 * scale_y)))
                 core.print_with_time("Player 2 tag:", t2)
                 payload['players'][0]['character'], payload['players'][1]['character'], payload['players'][0]['name'], payload['players'][1]['name'] = c1, c2, t1, t2
-            threading.Thread(target=read_characters_and_names, args=(payload,)).start()
+            threading.Thread(target=read_characters_and_names, args=(payload, img, scale_x, scale_y)).start()
             time.sleep(2)
     else:
         if config.getboolean('settings', 'debug_mode', fallback=False) == True:
@@ -185,7 +185,7 @@ def do_mii_recognition(img, player: int, scale_x, scale_y):
     return result
 
 
-def detect_taken_stock(payload:dict):    
+def detect_taken_stock(payload:dict, img, scale_x:float, scale_y:float):    
     img, scale_x, scale_y = core.capture_screen()
     
     # Define the region to check
@@ -217,7 +217,7 @@ def count_stock_numbers(img):
     if len(result) > 2: result = core.remove_neighbor_duplicates(result)
     return result
 
-def detect_game_end(payload:dict):
+def detect_game_end(payload:dict, img, scale_x:float, scale_y:float):
     img, scale_x, scale_y = core.capture_screen()
     
     # Crop the specific area
