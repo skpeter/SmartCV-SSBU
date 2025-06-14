@@ -34,7 +34,6 @@ payload = {
 }
 
 def detect_stage_select_screen(payload:dict, img, scale_x:float, scale_y:float):
-    img, scale_x, scale_y = core.capture_screen()
     pixel1 = img.getpixel((int(596 * scale_x), int(698 * scale_y)))
     pixel2 = img.getpixel((int(1842 * scale_x), int(54 * scale_y)))
     
@@ -62,7 +61,6 @@ def detect_stage_select_screen(payload:dict, img, scale_x:float, scale_y:float):
             print("No match")
 
 def detect_selected_stage(payload:dict, img, scale_x:float, scale_y:float):    
-    img, scale_x, scale_y = core.capture_screen()
     pixel = img.getpixel((int(1842 * scale_x), int(54 * scale_y)))
     
     # Define the target color and deviation
@@ -81,7 +79,6 @@ def detect_selected_stage(payload:dict, img, scale_x:float, scale_y:float):
             print("No match")
 
 def detect_character_select_screen(payload:dict, img, scale_x:float, scale_y:float):
-    img, scale_x, scale_y = core.capture_screen()
     pixel = img.getpixel((int(433 * scale_x), int(36 * scale_y)))
     
     # Define the target color and deviation
@@ -108,7 +105,6 @@ def detect_character_select_screen(payload:dict, img, scale_x:float, scale_y:flo
 def detect_versus_screen(payload:dict, img, scale_x:float, scale_y:float):
     if payload['players'][0]['character']: return
 
-    img, scale_x, scale_y = core.capture_screen()
     pixel = img.getpixel((int(30 * scale_x), int(69 * scale_y)))
     pixel2 = img.getpixel((int(1040 * scale_x), int(55 * scale_y)))
     
@@ -186,7 +182,6 @@ def do_mii_recognition(img, player: int, scale_x, scale_y):
 
 
 def detect_taken_stock(payload:dict, img, scale_x:float, scale_y:float):    
-    img, scale_x, scale_y = core.capture_screen()
     
     # Define the region to check
     region = int(905 * scale_x), int(445 * scale_y), int(105 * scale_x), int(40 * scale_y)
@@ -218,7 +213,6 @@ def count_stock_numbers(img):
     return result
 
 def detect_game_end(payload:dict, img, scale_x:float, scale_y:float):
-    img, scale_x, scale_y = core.capture_screen()
     
     # Crop the specific area
     x, y, w, h = int(312 * scale_x), int(225 * scale_y), int(1300 * scale_x), int(445 * scale_y)
