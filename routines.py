@@ -200,7 +200,7 @@ def detect_taken_stock(payload:dict, img, scale_x:float, scale_y:float):
         img = np.array(img)
         x,y,w,h = (400, int(340 * scale_y), int(1250 * scale_x), int(265 * scale_y))
         img = img[int(y):int(y+h), int(x):int(x+w)]
-        img = core.crop_image_y(img, (int(300 * scale_x), int(850 * scale_x)))
+        img = core.stitch_text_regions(img, 195, (255,255,255), 75, 0.05)
         stocks = count_stock_numbers(img)
         if len(stocks) == 2:
             payload['players'][0]['stocks'] = stocks[0]
