@@ -71,7 +71,7 @@ def detect_selected_stage(payload:dict, img, scale_x:float, scale_y:float):
         core.print_with_time("Got color code ", pixel, " at function detect_selected_stage -", end=' ')
     if core.is_within_deviation(pixel, target_color, deviation):
         stage = core.read_text(img, (int(110 * scale_x), int(700 * scale_y), int(500 * scale_x), int(100 * scale_y)))
-        if stage: payload['stage'], _ = findBestMatch(stage, ssbu.stages)
+        if stage: payload['stage'], _ = findBestMatch(stage.join(' '), ssbu.stages)
         print("Selected stage:", payload['stage'])
         time.sleep(1)
     else:
@@ -130,20 +130,20 @@ def detect_versus_screen(payload:dict, img, scale_x:float, scale_y:float):
             def read_characters_and_names(payload:dict, img, scale_x:float, scale_y:float):
                 # Initialize the reader
                 c1 = core.read_text(img, (int(110 * scale_x), int(10 * scale_y), int(870 * scale_x), int(120 * scale_y)))
-                c1, score = findBestMatch(c1, ssbu.characters)
+                if c1: c1, score = findBestMatch(c1.join(' '), ssbu.characters)
                 if score < 0.75:
                     # Character is most likely a Mii
                     c1 = do_mii_recognition(img, 1, scale_x, scale_y)
                 core.print_with_time("Player 1 character:", c1)
                 c2 = core.read_text(img, (int(1070 * scale_x), int(10 * scale_y), int(870 * scale_x), int(120 * scale_y)))
-                c2, score = findBestMatch(c2, ssbu.characters)
+                if c2: c2, score = findBestMatch(c2.join(' '), ssbu.characters)
                 if score < 0.75:
                     # Character is most likely a Mii
                     c2 = do_mii_recognition(img, 2, scale_x, scale_y)
                 core.print_with_time("Player 2 character:", c2)
-                t1 = core.read_text(img, (int(5 * scale_x), int(155 * scale_y), int(240 * scale_x), int(50 * scale_y)))
+                t1 = core.read_text(img, (int(5 * scale_x), int(155 * scale_y), int(240 * scale_x), int(50 * scale_y))).join(' ')
                 core.print_with_time("Player 1 tag:", t1)
-                t2 = core.read_text(img, (int(965 * scale_x), int(155 * scale_y), int(240 * scale_x), int(50 * scale_y)))
+                t2 = core.read_text(img, (int(965 * scale_x), int(155 * scale_y), int(240 * scale_x), int(50 * scale_y))).join(' ')
                 core.print_with_time("Player 2 tag:", t2)
                 payload['players'][0]['character'], payload['players'][1]['character'], payload['players'][0]['name'], payload['players'][1]['name'] = c1, c2, t1, t2
             threading.Thread(target=read_characters_and_names, args=(payload, img, scale_x, scale_y)).start()
@@ -244,8 +244,8 @@ def process_game_end_data(img, scale_x, scale_y):
     results.append(core.read_text(img, (x, y, w, h), allowlist="0123456789%"))
     results.append(core.read_text(img, (x1, y2, w2, h2), allowlist="0123456789%"))
 
-    payload['players'][0]['damage'] = results[0]
-    payload['players'][1]['damage'] = results[1]
+    payload['players'][0]['damage'] = results[0].join(' ')
+    payload['players'][1]['damage'] = results[1].join(' ')
 
     # if player has one stock left and the damage recognizes as an empty string, they've lost all of their stocks.
     for player in payload['players']:
