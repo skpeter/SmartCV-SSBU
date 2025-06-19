@@ -11,9 +11,10 @@ It's a project that uses pixel detection to recognize certain situations in the 
 - [Advanced Scene Switcher OBS Plugin](https://github.com/WarmUpTill/SceneSwitcher/releases)
 - Your copy of Super Smash Bros. Ultimate must be in **English** (other languages coming soon)
 
-## Installation
+## Step 1: Installation
+- Follow either one of the two steps below:
 ### Step 1.1: Installing the CPU version
-- Installing the CPU version is very easy. Just download the compiled release.zip [here](https://github.com/skpeter/smartcv/releases).
+- Installing the CPU version is very easy. Just download the compiled release.zip [here](https://github.com/skpeter/smartcv-sf6/releases).
 - You can skip to step 2 from here.
 ### Step 1.2: Installing the GPU version
 - You will need to download the **source code** zip [here](https://github.com/skpeter/smartcv/releases).
@@ -23,20 +24,13 @@ It's a project that uses pixel detection to recognize certain situations in the 
 ![PyTorch installation page](img/install1.jpg)
 - - Choosing these options will generate a command that you should copy and paste on your terminal/command prompt. PyTorch weighs around 3GB, so take your time.
 
-### Step 2: Setup
-SmartCV will read from a separate feed from OBS that will be provided to it. This is where Advanced Scene Switcher comes in. Once you have it installed, open it on the Tools tab:
-![Advanced Scene Switcher Setup](img/guide1.jpg)
-- On the window that opens, go to the Macros tab and click on the plus sign to add a new macro (you can name it anything you want). Click on the other plus signs to add a condition and an action to this macro. I've attached a screenshot so you can mimic the settings:
-
-![Advanced Scene Switcher Setup](img/guide2.jpg)
-- - "SSBU" should be the OBS source for your capture card.
-- - You can set the path to save the screenshot anywhere you'd like (SmartCV must have access to it), but it is **highly recommended** that you save the screenshot as a **WEBP**. This image format causes the least amount of issues and is very lightweight, however if for some reason you can't use WEBPs, you can save it as a JPG instead. 
-- Go to SmartCV's `config.ini` file and set the `feed_path` setting to the path where OBS is saving the screenshots.
+## Step 2: Setup
+SmartCV reads game data directly from the OBS video source you put it on through OBS Websockets. **Make sure you have OBS Websocket enabled and configured before continuing**. Open your `config.ini` file, find a setting called `source_title`, insert the name of your OBS source, and that's it! Make sure the other OBS settings are correct so SmartCV can connect with OBS. `width` and `height` are the resolution of the image OBS sends. If you want to save up on some CPU usage, you can lower this resolution (as long as it's 16:9 aspect ration), however some things may not behave like normal if you do.
 
 ### Step 3: Usage
-- To open the GPU version of the app, open the `main.py` file with Python. Otherwise to run the CPU version just run `smartcv.exe`.
+- To run the GPU version of the app, open the `smartcv.bat` file. To run the CPU version just open `smartcv.exe`.
 **From here all you need to do is follow the on-screen instructions for the game detection to start.**
-**Make sure to keep OBS open and do not disable the game capture source!**
+**If using OBS, make sure it is open and do not disable the game capture source!**
 
 ## Troubleshooting
 - **When I run the app it says a bunch of code that ends with `ModuleNotFoundError: No module named 'torch'"` at the end! What do I do?**
