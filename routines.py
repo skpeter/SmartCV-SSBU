@@ -47,20 +47,15 @@ def detect_stage_select_screen(payload:dict, img, scale_x:float, scale_y:float):
     if core.is_within_deviation(pixel1, target_color1, deviation) and core.is_within_deviation(pixel2, target_color2, deviation):
         print("Stage select screen detected")
         payload['state'] = "stage_select"
+        payload['stage'] = None
         if payload['state'] != previous_states[-1]:
             previous_states.append(payload['state'])
-            # reset payload to original values
-            #clean up some more player information
-            for player in payload['players']:
-                player['stocks'] = None
-                player['damage'] = None
-                player['character'] = None
-                player['name'] = None
     else:
         if config.getboolean('settings', 'debug_mode', fallback=False) == True:
             print("No match")
 
-def detect_selected_stage(payload:dict, img, scale_x:float, scale_y:float):    
+def detect_selected_stage(payload:dict, img, scale_x:float, scale_y:float):
+    if payload['stage']: return
     pixel = img.getpixel((int(1842 * scale_x), int(54 * scale_y)))
     
     # Define the target color and deviation
@@ -131,13 +126,13 @@ def detect_versus_screen(payload:dict, img, scale_x:float, scale_y:float):
                 # Initialize the reader
                 c1 = core.read_text(img, (int(110 * scale_x), int(10 * scale_y), int(870 * scale_x), int(120 * scale_y)))
                 if c1: c1, score = findBestMatch(' '.join(c1), ssbu.characters)
-                if score < 0.75:
+                if score and score < 0.75:
                     # Character is most likely a Mii
                     c1 = do_mii_recognition(img, 1, scale_x, scale_y)
                 core.print_with_time("Player 1 character:", c1)
                 c2 = core.read_text(img, (int(1070 * scale_x), int(10 * scale_y), int(870 * scale_x), int(120 * scale_y)))
                 if c2: c2, score = findBestMatch(' '.join(c2), ssbu.characters)
-                if score < 0.75:
+                if score and score < 0.75:
                     # Character is most likely a Mii
                     c2 = do_mii_recognition(img, 2, scale_x, scale_y)
                 core.print_with_time("Player 2 character:", c2)
@@ -184,18 +179,19 @@ def do_mii_recognition(img, player: int, scale_x, scale_y):
 def detect_taken_stock(payload:dict, img, scale_x:float, scale_y:float):    
     
     # Define the region to check
-    region = int(905 * scale_x), int(445 * scale_y), int(105 * scale_x), int(40 * scale_y)
+    region = int(910 * scale_x), int(450 * scale_y), int(100 * scale_x), int(35 * scale_y)
     target_color = (255, 255, 255)  # #ffffff in RGB
-    deviation = 0.1
+    deviation = 0.15
     
     if config.getboolean('settings', 'debug_mode', fallback=False) == True:
         core.print_with_time("Color region confidence: ",core.get_color_match_in_region(img, region, target_color, deviation), " at function detect_taken_stock -", end=' ')
     if core.get_color_match_in_region(img, region, target_color, deviation) >= 0.9:
         
         img = np.array(img)
-        x,y,w,h = (400, int(340 * scale_y), int(1250 * scale_x), int(265 * scale_y))
+        x,y,w,h = (200, int(340 * scale_y), int(1450 * scale_x), int(265 * scale_y))
         img = img[int(y):int(y+h), int(x):int(x+w)]
-        img = core.stitch_text_regions(img, 195, (255,255,255), 75, 0.05)
+        img = core.stitch_text_regions(img, 50, (255,255,255), 50, 0.1)
+        if not img.any(): return None
         stocks = count_stock_numbers(img)
         if len(stocks) == 2:
             payload['players'][0]['stocks'] = stocks[0]
@@ -207,6 +203,8 @@ def detect_taken_stock(payload:dict, img, scale_x:float, scale_y:float):
 
 def count_stock_numbers(img):
     result = core.read_text(img, allowlist='123', low_text=0.3)
+    if isinstance(result, list):
+        result = ''.join(result)
     if not result or len(result) < 2: return [None]
     result = [int(x) for x in str(result) if x.isdigit()]
     if len(result) > 2: result = core.remove_neighbor_duplicates(result)
