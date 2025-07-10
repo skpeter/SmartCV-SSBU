@@ -6,6 +6,9 @@ on:
       - main
     paths-ignore:
       - 'README.md'
+  workflow_dispatch:
+  repository_dispatch:
+    types: [core-updated]
 
 jobs:
   build:
@@ -50,13 +53,13 @@ jobs:
       run: |
         copy core\config.ini.example dist\smartcv\config.ini
         mkdir dist\smartcv\img
-    - name: Override default config.ini settings for SmartCV-SSBU
+    - name: Override default config.ini settings for SmartCV-RoA2
       shell: pwsh
       run: |
         $path = "dist\smartcv\config.ini"
         (Get-Content $path) | ForEach-Object {
-          if ($_ -match '^\s*capture_mode\s*=') {
-            "capture_mode = obs"
+          if ($_ -match '^\s*executable_title\s*=') {
+            "executable_title = Rivals2"
           } else {
             $_
           }

@@ -21,9 +21,23 @@ jobs:
           git status
 
       - name: Commit submodule update if needed
+        id: commit
         run: |
           git config user.name "GitHub Actions"
           git config user.email "actions@github.com"
           git add core
-          git commit -m "Bump up core" || echo "No changes"
-          git push || echo "No push needed"
+          if git diff --cached --quiet; then
+            echo "No changes"
+            echo "changes_detected=false" >> $GITHUB_OUTPUT
+          else
+            git commit -m "Bump up core"
+            git push
+            echo "changes_detected=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Trigger build if core updated
+        if: steps.commit.outputs.changes_detected == 'true'
+        uses: peter-evans/repository-dispatch@v3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          event-type: core-updated
