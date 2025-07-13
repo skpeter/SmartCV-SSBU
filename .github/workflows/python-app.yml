@@ -59,7 +59,7 @@ jobs:
         $path = "dist\smartcv\config.ini"
         (Get-Content $path) | ForEach-Object {
           if ($_ -match '^\s*executable_title\s*=') {
-            "executable_title = Rivals2"
+            "capture_mode = obs"
           } else {
             $_
           }
