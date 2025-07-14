@@ -39,7 +39,7 @@ def detect_stage_select_screen(payload:dict, img, scale_x:float, scale_y:float):
     
     # Define the target colors and deviation
     target_color1 = (85, 98, 107)  # #55626b in RGB
-    target_color2 = (200, 0, 0)   # #a50215 in RGB
+    target_color2 = (180, 5, 5)   # #a50215 in RGB
     deviation = 0.1
     if config.getboolean('settings', 'debug_mode', fallback=False) == True:
         core.print_with_time("Got 1st color code ", pixel1, " at function detect_stage_select_screen")
@@ -223,10 +223,10 @@ def detect_game_end(payload:dict, img, scale_x:float, scale_y:float):
         core.print_with_time("Game template matching results:", match_score1, match_score2, end=' ')
     if match_score1 >= threshold or match_score1 >= threshold:
         print("Game end detected")
-        process_game_end_data(img, scale_x, scale_y)
         payload['state'] = "game_end"
         if payload['state'] != previous_states[-1]:
             previous_states.append(payload['state'])
+        while all(player['stocks'] > 0 for player in payload['players']): process_game_end_data(img, scale_x, scale_y)
     else:
         if config.getboolean('settings', 'debug_mode', fallback=False) == True:
             print("No match")
@@ -254,6 +254,7 @@ def process_game_end_data(img, scale_x, scale_y):
                 if player['damage'] not in ['',' ',None]:
                     print(str(player['name']), "wins!")
                     player['damage'].replace("%", "")
+        time.sleep(core.refresh_rate)
     if config.getboolean('settings', 'debug_mode', fallback=False) == True:
         core.print_with_time(f"Damage count - Player 1: '{payload['players'][0]['damage']}' - Player 2: '{payload['players'][1]['damage']}'")
     
