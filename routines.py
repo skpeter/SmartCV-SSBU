@@ -1,6 +1,5 @@
 client_name = "smartcv-ssbu"
 import configparser
-import threading
 import time
 import numpy as np
 import ssbu
@@ -141,8 +140,8 @@ def detect_versus_screen(payload:dict, img, scale_x:float, scale_y:float):
                 t2 = ' '.join(core.read_text(img, (int(965 * scale_x), int(155 * scale_y), int(240 * scale_x), int(50 * scale_y))))
                 core.print_with_time("Player 2 tag:", t2)
                 payload['players'][0]['character'], payload['players'][1]['character'], payload['players'][0]['name'], payload['players'][1]['name'] = c1, c2, t1, t2
-            threading.Thread(target=read_characters_and_names, args=(payload, img, scale_x, scale_y)).start()
-            time.sleep(2)
+            read_characters_and_names(payload, img, scale_x, scale_y)
+            
     else:
         if config.getboolean('settings', 'debug_mode', fallback=False) == True:
             print("No match")
