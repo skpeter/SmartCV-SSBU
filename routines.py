@@ -269,8 +269,8 @@ states_to_functions = {
         detect_character_select_screen,
     ],
     "character_select": [
-        detect_versus_screen,
-        detect_stage_select_screen if not config.getboolean('settings', 'disable_stage_selection', fallback=False) else None
+        detect_stage_select_screen if not config.getboolean('settings', 'disable_stage_selection', fallback=False) else None,
+        detect_versus_screen
     ],
     "in_game": [
         detect_taken_stock, detect_game_end,
