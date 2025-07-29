@@ -14,7 +14,7 @@ It's a project that uses pixel detection to recognize certain situations in the 
 ## Step 1: Installation
 - Follow either one of the two steps below:
 ### Step 1.1: Installing the CPU version
-- Installing the CPU version is very easy. Just download the compiled release.zip [here](https://github.com/skpeter/smartcv-sf6/releases).
+- Installing the CPU version is very easy. Just download the compiled release.zip [here](https://github.com/skpeter/smartcv-ssbu/releases).
 - You can skip to step 2 from here.
 ### Step 1.2: Installing the GPU version
 - You will need to download the **source code** zip [here](https://github.com/skpeter/smartcv/releases).
