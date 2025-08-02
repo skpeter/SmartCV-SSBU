@@ -1,10 +1,10 @@
-client_name = "smartcv-ssbu"
 import configparser
 import time
 import numpy as np
 import ssbu
 import core.core as core
 from core.matching import findBestMatch
+client_name = "smartcv-ssbu"
 config = configparser.ConfigParser()
 config.read('config.ini')
 # Get the feed path from the config file
@@ -32,15 +32,15 @@ payload = {
 }
 
 
-def detect_stage_select_screen(payload:dict, img, scale_x:float, scale_y:float):
+def detect_stage_select_screen(payload: dict, img, scale_x: float, scale_y: float):
     pixel1 = img.getpixel((int(596 * scale_x), int(698 * scale_y)))
     pixel2 = img.getpixel((int(1842 * scale_x), int(54 * scale_y)))
 
     # Define the target colors and deviation
     target_color1 = (85, 98, 107)  # #55626b in RGB
-    target_color2 = (180, 5, 5)   # #a50215 in RGB
+    target_color2 = (180, 5, 5)   # # a50215 in RGB
     deviation = 0.1
-    if config.getboolean('settings', 'debug_mode', fallback=False) == True:
+    if config.getboolean('settings', 'debug_mode', fallback=False):
         core.print_with_time("Got 1st color code ", pixel1, " at function detect_stage_select_screen")
         core.print_with_time("Got 2nd color code ", pixel2, " at function detect_stage_select_screen -", end=' ')
     if core.is_within_deviation(pixel1, target_color1, deviation) and core.is_within_deviation(pixel2, target_color2, deviation):
@@ -50,11 +50,11 @@ def detect_stage_select_screen(payload:dict, img, scale_x:float, scale_y:float):
         if payload['state'] != previous_states[-1]:
             previous_states.append(payload['state'])
     else:
-        if config.getboolean('settings', 'debug_mode', fallback=False) == True:
+        if config.getboolean('settings', 'debug_mode', fallback=False):
             print("No match")
 
 
-def detect_selected_stage(payload:dict, img, scale_x:float, scale_y:float):
+def detect_selected_stage(payload: dict, img, scale_x: float, scale_y: float):
     if payload['stage']: return
     pixel = img.getpixel((int(1842 * scale_x), int(54 * scale_y)))
 
@@ -62,7 +62,7 @@ def detect_selected_stage(payload:dict, img, scale_x:float, scale_y:float):
     target_color = (75, 5, 7)  # #4b0507 in RGB
     deviation = 0.1
 
-    if config.getboolean('settings', 'debug_mode', fallback=False) == True:
+    if config.getboolean('settings', 'debug_mode', fallback=False):
         core.print_with_time("Got color code ", pixel, " at function detect_selected_stage -", end=' ')
     if core.is_within_deviation(pixel, target_color, deviation):
         stage = core.read_text(img, (int(110 * scale_x), int(700 * scale_y), int(500 * scale_x), int(100 * scale_y)))
@@ -70,36 +70,36 @@ def detect_selected_stage(payload:dict, img, scale_x:float, scale_y:float):
         print("Selected stage:", payload['stage'])
         time.sleep(1)
     else:
-        if config.getboolean('settings', 'debug_mode', fallback=False) == True:
+        if config.getboolean('settings', 'debug_mode', fallback=False):
             print("No match")
 
 
-def detect_character_select_screen(payload:dict, img, scale_x:float, scale_y:float):
+def detect_character_select_screen(payload: dict, img, scale_x: float, scale_y: float):
     pixel = img.getpixel((int(433 * scale_x), int(36 * scale_y)))
 
     # Define the target color and deviation
-    target_color = (230, 208, 24)  # #e6d018 in RGB
+    target_color = (230, 208, 24)  # # e6d018 in RGB
     deviation = 0.1
-    if config.getboolean('settings', 'debug_mode', fallback=False) == True:
+    if config.getboolean('settings', 'debug_mode', fallback=False):
         core.print_with_time("Got color code ", pixel, " at function detect_character_select_screen -", end=' ')
     if core.is_within_deviation(pixel, target_color, deviation):
         payload['state'] = "character_select"
         print("Character select screen detected")
         if payload['state'] != previous_states[-1]:
             previous_states.append(payload['state'])
-            #clean up some more player information
+            # clean up some more player information
             for player in payload['players']:
                 player['stocks'] = None
                 player['damage'] = None
                 player['character'] = None
                 player['name'] = None
     else:
-        if config.getboolean('settings', 'debug_mode', fallback=False) == True:
+        if config.getboolean('settings', 'debug_mode', fallback=False):
             print("No match")
     return
 
 
-def detect_versus_screen(payload:dict, img, scale_x:float, scale_y:float):
+def detect_versus_screen(payload: dict, img, scale_x: float, scale_y: float):
     if payload['players'][0]['character']: return
 
     pixel = img.getpixel((int(30 * scale_x), int(69 * scale_y)))
@@ -107,24 +107,25 @@ def detect_versus_screen(payload:dict, img, scale_x:float, scale_y:float):
 
     # Define the target color and deviation
 
-    target_color = (251, 53, 51)  # #FB3533 in RGB
+    target_color = (251, 53, 51)  # # FB3533 in RGB
     target_color2 = (33, 140, 254)  # #218CFE in RGB
-    target_color3 = (255, 194, 33)  # #FFC221 in RGB
+    target_color3 = (255, 194, 33)  # # FFC221 in RGB
     target_color4 = (41, 176, 80)  # #29B050 in RGB
 
     deviation = 0.2
 
-    if config.getboolean('settings', 'debug_mode', fallback=False) == True:
+    if config.getboolean('settings', 'debug_mode', fallback=False):
         core.print_with_time("Got color code ", pixel, " at function detect_versus_screen -", end=' ')
     if (core.is_within_deviation(pixel, target_color, deviation) or core.is_within_deviation(pixel, target_color2, deviation) or core.is_within_deviation(pixel, target_color3, deviation)) and (core.is_within_deviation(pixel2, target_color2, deviation) or core.is_within_deviation(pixel2, target_color3, deviation) or core.is_within_deviation(pixel2, target_color4, deviation)):
         print("Versus screen detected")
         payload['state'] = "in_game"
         if payload['state'] != previous_states[-1]:
-            #set initial game data, both players have 3 stocks
+            # set initial game data, both players have 3 stocks
             for player in payload['players']:
                 player['stocks'] = 3
             previous_states.append(payload['state'])
-            def read_characters_and_names(payload:dict, img, scale_x:float, scale_y:float):
+
+            def read_characters_and_names(payload: dict, img, scale_x: float, scale_y: float):
                 # Initialize the reader
                 c1 = core.read_text(img, (int(110 * scale_x), int(10 * scale_y), int(870 * scale_x), int(120 * scale_y)))
                 if c1: c1, score = findBestMatch(' '.join(c1), ssbu.characters)
@@ -146,7 +147,7 @@ def detect_versus_screen(payload:dict, img, scale_x:float, scale_y:float):
             read_characters_and_names(payload, img, scale_x, scale_y)
 
     else:
-        if config.getboolean('settings', 'debug_mode', fallback=False) == True:
+        if config.getboolean('settings', 'debug_mode', fallback=False):
             print("No match")
     return img
 
@@ -159,15 +160,15 @@ def do_mii_recognition(img, player: int, scale_x, scale_y):
     swordfighter_pixel = img.getpixel((int(334 * scale_x + offset_x), int(789 * scale_y))) # above his belt
 
     # Define the target colors and deviation
-    brawler_color = (253, 46, 45) # #55626b in RGB
-    gunner_color = (240, 175, 58) # #f0af3a in RGB
-    swordfighter_color = (22, 63, 148) # #163f94 in RGB
+    brawler_color = (253, 46, 45)  # #55626b in RGB
+    gunner_color = (240, 175, 58)  # # f0af3a in RGB
+    swordfighter_color = (22, 63, 148)  # #163f94 in RGB
     deviation = 0.1
-    if config.getboolean('settings', 'debug_mode', fallback=False) == True:
+    if config.getboolean('settings', 'debug_mode', fallback=False):
         core.print_with_time("Got color code ", brawler_color, " at function do_mii_recognition")
-    if config.getboolean('settings', 'debug_mode', fallback=False) == True:
+    if config.getboolean('settings', 'debug_mode', fallback=False):
         core.print_with_time("Got color code ", gunner_color, " at function do_mii_recognition")
-    if config.getboolean('settings', 'debug_mode', fallback=False) == True:
+    if config.getboolean('settings', 'debug_mode', fallback=False):
         core.print_with_time("Got color code ", swordfighter_color, " at function do_mii_recognition")
     if core.is_within_deviation(brawler_pixel, brawler_color, deviation):
         result = "Mii Brawler"
@@ -179,21 +180,21 @@ def do_mii_recognition(img, player: int, scale_x, scale_y):
     return result
 
 
-def detect_taken_stock(payload:dict, img, scale_x:float, scale_y:float):    
+def detect_taken_stock(payload: dict, img, scale_x: float, scale_y: float):    
 
     # Define the region to check
     region = int(910 * scale_x), int(450 * scale_y), int(100 * scale_x), int(35 * scale_y)
-    target_color = (255, 255, 255)  # #ffffff in RGB
+    target_color = (255, 255, 255)  # # ffffff in RGB
     deviation = 0.15
 
-    if config.getboolean('settings', 'debug_mode', fallback=False) == True:
+    if config.getboolean('settings', 'debug_mode', fallback=False):
         core.print_with_time("Color region confidence: ",core.get_color_match_in_region(img, region, target_color, deviation), " at function detect_taken_stock -", end=' ')
     if core.get_color_match_in_region(img, region, target_color, deviation) >= 0.9:
 
         img = np.array(img)
-        x,y,w,h = (200, int(340 * scale_y), int(1450 * scale_x), int(265 * scale_y))
+        x, y, w, h = (200, int(340 * scale_y), int(1450 * scale_x), int(265 * scale_y))
         img = img[int(y):int(y+h), int(x):int(x+w)]
-        img = core.stitch_text_regions(img, 50, (255,255,255), 50, 0.1)
+        img = core.stitch_text_regions(img, 50, (255, 255, 255), 50, 0.1)
         if not img.any(): return None
         stocks = count_stock_numbers(img)
         if len(stocks) == 2:
@@ -201,7 +202,7 @@ def detect_taken_stock(payload:dict, img, scale_x:float, scale_y:float):
             payload['players'][1]['stocks'] = stocks[1]
             print("Stock taken. Stocks left:", payload['players'][0]['stocks']," - ", payload['players'][1]['stocks'])
     else:
-        if config.getboolean('settings', 'debug_mode', fallback=False) == True:
+        if config.getboolean('settings', 'debug_mode', fallback=False):
             print("No match")
 
 
@@ -215,7 +216,7 @@ def count_stock_numbers(img):
     return result
 
 
-def detect_game_end(payload:dict, img, scale_x:float, scale_y:float):
+def detect_game_end(payload: dict, img, scale_x: float, scale_y: float):
 
     # Crop the specific area
     x, y, w, h = int(312 * scale_x), int(225 * scale_y), int(1300 * scale_x), int(445 * scale_y)
@@ -224,7 +225,7 @@ def detect_game_end(payload:dict, img, scale_x:float, scale_y:float):
 
     # Check if the maximum correlation coefficient exceeds the threshold
     threshold = 0.5
-    if config.getboolean('settings', 'debug_mode', fallback=False) == True:
+    if config.getboolean('settings', 'debug_mode', fallback=False):
         core.print_with_time("Game template matching results:", match_score1, match_score2, end=' ')
     if match_score1 >= threshold or match_score1 >= threshold:
         print("Game end detected")
@@ -233,7 +234,7 @@ def detect_game_end(payload:dict, img, scale_x:float, scale_y:float):
             previous_states.append(payload['state'])
         while all(player['stocks'] > 0 for player in payload['players']): process_game_end_data(img, scale_x, scale_y)
     else:
-        if config.getboolean('settings', 'debug_mode', fallback=False) == True:
+        if config.getboolean('settings', 'debug_mode', fallback=False):
             print("No match")
 
 
@@ -252,15 +253,15 @@ def process_game_end_data(img, scale_x, scale_y):
 
     # if player has one stock left and the damage recognizes as an empty string, they've lost all of their stocks.
     for player in payload['players']:
-        if player['stocks'] and player['stocks'] < 3 and player['damage'] in ['',' ',None]:
+        if player['stocks'] and player['stocks'] < 3 and player['damage'] in ['', ' ', None]:
             player['stocks'] = 0
             core.print_with_time(str(player['name']), "has lost all of their stocks - ", end='')
             for player in payload['players']:
-                if player['damage'] not in ['',' ',None]:
+                if player['damage'] not in ['', ' ', None]:
                     print(str(player['name']), "wins!")
                     player['damage'].replace("%", "")
         time.sleep(core.refresh_rate)
-    if config.getboolean('settings', 'debug_mode', fallback=False) == True:
+    if config.getboolean('settings', 'debug_mode', fallback=False):
         core.print_with_time(f"Damage count - Player 1: '{payload['players'][0]['damage']}' - Player 2: '{payload['players'][1]['damage']}'")
 
 
