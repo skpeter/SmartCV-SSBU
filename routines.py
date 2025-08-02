@@ -8,7 +8,6 @@ from core.matching import findBestMatch
 config = configparser.ConfigParser()
 config.read('config.ini')
 # Get the feed path from the config file
-feed_path = config.get('settings', 'feed_path')
 base_width = 1920
 base_height = 1080
 previous_states = [None]
@@ -32,10 +31,11 @@ payload = {
     ]
 }
 
+
 def detect_stage_select_screen(payload:dict, img, scale_x:float, scale_y:float):
     pixel1 = img.getpixel((int(596 * scale_x), int(698 * scale_y)))
     pixel2 = img.getpixel((int(1842 * scale_x), int(54 * scale_y)))
-    
+
     # Define the target colors and deviation
     target_color1 = (85, 98, 107)  # #55626b in RGB
     target_color2 = (180, 5, 5)   # #a50215 in RGB
@@ -53,14 +53,15 @@ def detect_stage_select_screen(payload:dict, img, scale_x:float, scale_y:float):
         if config.getboolean('settings', 'debug_mode', fallback=False) == True:
             print("No match")
 
+
 def detect_selected_stage(payload:dict, img, scale_x:float, scale_y:float):
     if payload['stage']: return
     pixel = img.getpixel((int(1842 * scale_x), int(54 * scale_y)))
-    
+
     # Define the target color and deviation
     target_color = (75, 5, 7)  # #4b0507 in RGB
     deviation = 0.1
-        
+
     if config.getboolean('settings', 'debug_mode', fallback=False) == True:
         core.print_with_time("Got color code ", pixel, " at function detect_selected_stage -", end=' ')
     if core.is_within_deviation(pixel, target_color, deviation):
@@ -72,9 +73,10 @@ def detect_selected_stage(payload:dict, img, scale_x:float, scale_y:float):
         if config.getboolean('settings', 'debug_mode', fallback=False) == True:
             print("No match")
 
+
 def detect_character_select_screen(payload:dict, img, scale_x:float, scale_y:float):
     pixel = img.getpixel((int(433 * scale_x), int(36 * scale_y)))
-    
+
     # Define the target color and deviation
     target_color = (230, 208, 24)  # #e6d018 in RGB
     deviation = 0.1
@@ -96,12 +98,13 @@ def detect_character_select_screen(payload:dict, img, scale_x:float, scale_y:flo
             print("No match")
     return
 
+
 def detect_versus_screen(payload:dict, img, scale_x:float, scale_y:float):
     if payload['players'][0]['character']: return
 
     pixel = img.getpixel((int(30 * scale_x), int(69 * scale_y)))
     pixel2 = img.getpixel((int(1040 * scale_x), int(55 * scale_y)))
-    
+
     # Define the target color and deviation
 
     target_color = (251, 53, 51)  # #FB3533 in RGB
@@ -110,7 +113,7 @@ def detect_versus_screen(payload:dict, img, scale_x:float, scale_y:float):
     target_color4 = (41, 176, 80)  # #29B050 in RGB
 
     deviation = 0.2
-    
+
     if config.getboolean('settings', 'debug_mode', fallback=False) == True:
         core.print_with_time("Got color code ", pixel, " at function detect_versus_screen -", end=' ')
     if (core.is_within_deviation(pixel, target_color, deviation) or core.is_within_deviation(pixel, target_color2, deviation) or core.is_within_deviation(pixel, target_color3, deviation)) and (core.is_within_deviation(pixel2, target_color2, deviation) or core.is_within_deviation(pixel2, target_color3, deviation) or core.is_within_deviation(pixel2, target_color4, deviation)):
@@ -141,11 +144,12 @@ def detect_versus_screen(payload:dict, img, scale_x:float, scale_y:float):
                 core.print_with_time("Player 2 tag:", t2)
                 payload['players'][0]['character'], payload['players'][1]['character'], payload['players'][0]['name'], payload['players'][1]['name'] = c1, c2, t1, t2
             read_characters_and_names(payload, img, scale_x, scale_y)
-            
+
     else:
         if config.getboolean('settings', 'debug_mode', fallback=False) == True:
             print("No match")
     return img
+
 
 def do_mii_recognition(img, player: int, scale_x, scale_y):
     result = None
@@ -176,16 +180,16 @@ def do_mii_recognition(img, player: int, scale_x, scale_y):
 
 
 def detect_taken_stock(payload:dict, img, scale_x:float, scale_y:float):    
-    
+
     # Define the region to check
     region = int(910 * scale_x), int(450 * scale_y), int(100 * scale_x), int(35 * scale_y)
     target_color = (255, 255, 255)  # #ffffff in RGB
     deviation = 0.15
-    
+
     if config.getboolean('settings', 'debug_mode', fallback=False) == True:
         core.print_with_time("Color region confidence: ",core.get_color_match_in_region(img, region, target_color, deviation), " at function detect_taken_stock -", end=' ')
     if core.get_color_match_in_region(img, region, target_color, deviation) >= 0.9:
-        
+
         img = np.array(img)
         x,y,w,h = (200, int(340 * scale_y), int(1450 * scale_x), int(265 * scale_y))
         img = img[int(y):int(y+h), int(x):int(x+w)]
@@ -200,6 +204,7 @@ def detect_taken_stock(payload:dict, img, scale_x:float, scale_y:float):
         if config.getboolean('settings', 'debug_mode', fallback=False) == True:
             print("No match")
 
+
 def count_stock_numbers(img):
     result = core.read_text(img, allowlist='123', low_text=0.3)
     if isinstance(result, list):
@@ -209,13 +214,14 @@ def count_stock_numbers(img):
     if len(result) > 2: result = core.remove_neighbor_duplicates(result)
     return result
 
+
 def detect_game_end(payload:dict, img, scale_x:float, scale_y:float):
-    
+
     # Crop the specific area
     x, y, w, h = int(312 * scale_x), int(225 * scale_y), int(1300 * scale_x), int(445 * scale_y)
     match_score1 = core.detect_image(img, scale_x, scale_y, 'img/GAME.png', (x, y, w, h))
     match_score2 = core.detect_image(img, scale_x, scale_y, 'img/TIME.png', (x, y, w, h))
-        
+
     # Check if the maximum correlation coefficient exceeds the threshold
     threshold = 0.5
     if config.getboolean('settings', 'debug_mode', fallback=False) == True:
@@ -230,13 +236,13 @@ def detect_game_end(payload:dict, img, scale_x:float, scale_y:float):
         if config.getboolean('settings', 'debug_mode', fallback=False) == True:
             print("No match")
 
-    
+
 def process_game_end_data(img, scale_x, scale_y):
     x, y, w, h = int(510 * scale_x), int(920 * scale_y), int(145 * scale_x), int(80 * scale_y)
     x1, y2, w2, h2 = int(1250 * scale_x), int(920 * scale_y), int(145 * scale_x), int(80 * scale_y)
-    
+
     results = []
-    
+
     results = []
     results.append(core.read_text(img, (x, y, w, h), allowlist="0123456789%"))
     results.append(core.read_text(img, (x1, y2, w2, h2), allowlist="0123456789%"))
@@ -256,8 +262,8 @@ def process_game_end_data(img, scale_x, scale_y):
         time.sleep(core.refresh_rate)
     if config.getboolean('settings', 'debug_mode', fallback=False) == True:
         core.print_with_time(f"Damage count - Player 1: '{payload['players'][0]['damage']}' - Player 2: '{payload['players'][1]['damage']}'")
-    
-    
+
+
 states_to_functions = {
     None: [
         detect_stage_select_screen
