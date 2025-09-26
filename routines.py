@@ -134,23 +134,30 @@ def detect_versus_screen(payload: dict, img, scale_x: float, scale_y: float):
                 player['stocks'] = 3
             previous_states.append(payload['state'])
 
-            def read_characters_and_names(payload: dict, img, scale_x: float, scale_y: float):
+            def read_characters_and_names(payload: dict, img, scale_x: float, scale_y: float, attempts: int = 0):
                 # Initialize the reader
                 c1 = core.read_text(img, (int(
                     110 * scale_x), int(10 * scale_y), int(870 * scale_x), int(120 * scale_y)))
                 if c1:
                     c1, score = findBestMatch(' '.join(c1), ssbu.characters)
-                if score and score < 0.75:
-                    # Character is most likely a Mii
-                    c1 = do_mii_recognition(img, 1, scale_x, scale_y)
-                core.print_with_time("Player 1 character:", c1)
+                    if score and score < 0.75:
+                        # Character is most likely a Mii
+                        c1 = do_mii_recognition(img, 1, scale_x, scale_y)
                 c2 = core.read_text(img, (int(
                     1070 * scale_x), int(10 * scale_y), int(870 * scale_x), int(120 * scale_y)))
                 if c2:
                     c2, score = findBestMatch(' '.join(c2), ssbu.characters)
-                if score and score < 0.75:
-                    # Character is most likely a Mii
-                    c2 = do_mii_recognition(img, 2, scale_x, scale_y)
+                    if score and score < 0.75:
+                        # Character is most likely a Mii
+                        c2 = do_mii_recognition(img, 2, scale_x, scale_y)
+                if (not c1 or not c2):
+                    time.sleep(core.refresh_rate)
+                    attempts += 1
+                    if attempts < 2:
+                        read_characters_and_names(
+                            payload, img, scale_x, scale_y, attempts)
+                    return
+                core.print_with_time("Player 1 character:", c1)
                 core.print_with_time("Player 2 character:", c2)
                 t1 = ' '.join(core.read_text(
                     img, (int(5 * scale_x), int(155 * scale_y), int(240 * scale_x), int(50 * scale_y))))
