@@ -39,7 +39,7 @@ def detect_stage_select_screen(payload: dict, img, scale_x: float, scale_y: floa
     # Define the target colors and deviation
     target_color1 = (85, 98, 107)  # #55626b in RGB
     target_color2 = (180, 5, 5)   # # a50215 in RGB
-    deviation = 0.1
+    deviation = 0.125
     if config.getboolean('settings', 'debug_mode', fallback=False):
         core.print_with_time("Got 1st color code ", pixel1,
                              " at function detect_stage_select_screen")
@@ -63,7 +63,7 @@ def detect_selected_stage(payload: dict, img, scale_x: float, scale_y: float):
 
     # Define the target color and deviation
     target_color = (75, 5, 7)  # #4b0507 in RGB
-    deviation = 0.1
+    deviation = 0.125
 
     if config.getboolean('settings', 'debug_mode', fallback=False):
         core.print_with_time("Got color code ", pixel,
@@ -85,7 +85,7 @@ def detect_character_select_screen(payload: dict, img, scale_x: float, scale_y: 
 
     # Define the target color and deviation
     target_color = (230, 208, 24)  # # e6d018 in RGB
-    deviation = 0.1
+    deviation = 0.125
     if config.getboolean('settings', 'debug_mode', fallback=False):
         core.print_with_time("Got color code ", pixel,
                              " at function detect_character_select_screen -", end=' ')
@@ -183,7 +183,7 @@ def do_mii_recognition(img, player: int, scale_x, scale_y):
     brawler_color = (253, 46, 45)  # #55626b in RGB
     gunner_color = (240, 175, 58)  # # f0af3a in RGB
     swordfighter_color = (22, 63, 148)  # #163f94 in RGB
-    deviation = 0.1
+    deviation = 0.125
     if config.getboolean('settings', 'debug_mode', fallback=False):
         core.print_with_time("Got color code ", brawler_color,
                              " at function do_mii_recognition")
