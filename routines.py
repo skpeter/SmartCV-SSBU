@@ -213,8 +213,12 @@ def do_mii_recognition(img, player: int, scale_x, scale_y):
 def detect_taken_stock(payload: dict, img, scale_x: float, scale_y: float):
 
     # Define the region to check
-    region = int(910 * scale_x), int(450 *
-                                     scale_y), int(100 * scale_x), int(35 * scale_y)
+    region = (
+        int(910 * scale_x),
+        int(450 * scale_y),
+        int(100 * scale_x),
+        int(35 * scale_y)
+    )
     target_color = (255, 255, 255)  # # ffffff in RGB
     deviation = 0.15
 
@@ -226,7 +230,7 @@ def detect_taken_stock(payload: dict, img, scale_x: float, scale_y: float):
         img = np.array(img)
         x, y, w, h = (200, int(340 * scale_y),
                       int(1450 * scale_x), int(265 * scale_y))
-        img = img[int(y):int(y+h), int(x):int(x+w)]
+        img = img[int(y):int(y + h), int(x):int(x + w)]
         img = core.stitch_text_regions(img, 50, (255, 255, 255), 50, 0.1)
         if not img.any():
             return None
@@ -256,8 +260,12 @@ def count_stock_numbers(img):
 def detect_game_end(payload: dict, img, scale_x: float, scale_y: float):
 
     # Crop the specific area
-    x, y, w, h = int(312 * scale_x), int(225 *
-                                         scale_y), int(1300 * scale_x), int(445 * scale_y)
+    x, y, w, h = (
+        int(312 * scale_x),
+        int(225 * scale_y),
+        int(1300 * scale_x),
+        int(445 * scale_y)
+    )
     match_score1 = core.detect_image(
         img, scale_x, scale_y, 'img/GAME.png', (x, y, w, h))
     match_score2 = core.detect_image(
@@ -283,10 +291,14 @@ def detect_game_end(payload: dict, img, scale_x: float, scale_y: float):
 
 
 def process_game_end_data(img, scale_x, scale_y):
-    x, y, w, h = int(510 * scale_x), int(920 *
-                                         scale_y), int(145 * scale_x), int(80 * scale_y)
-    x1, y2, w2, h2 = int(1250 * scale_x), int(920 *
-                                              scale_y), int(145 * scale_x), int(80 * scale_y)
+    x, y, w, h = (
+        int(510 * scale_x), int(920 * scale_y),
+        int(145 * scale_x), int(80 * scale_y)
+    )
+    x1, y2, w2, h2 = (
+        int(1250 * scale_x), int(920 * scale_y),
+        int(145 * scale_x), int(80 * scale_y)
+    )
 
     results = []
 
