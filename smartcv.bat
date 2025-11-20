@@ -1,3 +1,3 @@
 @echo off
-python ./core/core.py
+python -m core.core
 pause

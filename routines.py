@@ -274,8 +274,10 @@ def detect_game_end(payload: dict, img, scale_x: float, scale_y: float):
     # Check if the maximum correlation coefficient exceeds the threshold
     threshold = 0.5
     if config.getboolean('settings', 'debug_mode', fallback=False):
-        core.print_with_time("Game template matching results:",
-                             match_score1, match_score2, end=' ')
+        core.print_with_time(
+            "End game text matching results:",
+            match_score1, match_score2, end=' '
+        )
     if match_score1 >= threshold or match_score1 >= threshold:
         print("Game end detected")
         payload['state'] = "game_end"
