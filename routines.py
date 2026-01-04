@@ -160,10 +160,10 @@ def detect_versus_screen(payload: dict, img, scale_x: float, scale_y: float):
                 core.print_with_time("Player 1 character:", c1)
                 core.print_with_time("Player 2 character:", c2)
                 t1 = ' '.join(core.read_text(
-                    img, (int(5 * scale_x), int(155 * scale_y), int(240 * scale_x), int(50 * scale_y))))
+                    img, (int(5 * scale_x), int(155 * scale_y), int(240 * scale_x), int(50 * scale_y))) or [])
                 core.print_with_time("Player 1 tag:", t1)
                 t2 = ' '.join(core.read_text(img, (int(
-                    965 * scale_x), int(155 * scale_y), int(240 * scale_x), int(50 * scale_y))))
+                    965 * scale_x), int(155 * scale_y), int(240 * scale_x), int(50 * scale_y))) or [])
                 core.print_with_time("Player 2 tag:", t2)
                 payload['players'][0]['character'], payload['players'][1]['character'], payload[
                     'players'][0]['name'], payload['players'][1]['name'] = c1, c2, t1, t2
@@ -280,13 +280,14 @@ def detect_game_end(payload: dict, img, scale_x: float, scale_y: float):
         )
     if match_score1 >= threshold or match_score1 >= threshold:
         print("Game end detected")
-        payload['state'] = "game_end"
         if payload['state'] != previous_states[-1]:
             previous_states.append(payload['state'])
         retries = 0
         while all(player['stocks'] > 0 for player in payload['players']) and retries < 5:
             process_game_end_data(img, scale_x, scale_y)
             retries += 1
+        if retries < 5:
+            payload['state'] = "game_end"
     else:
         if config.getboolean('settings', 'debug_mode', fallback=False):
             print("No match")
@@ -314,9 +315,12 @@ def process_game_end_data(img, scale_x, scale_y):
     payload['players'][1]['damage'] = ' '.join(
         results[1]) if results[1] else ''
 
-    # if player has one stock left and the damage recognizes as an empty string, they've lost all of their stocks.
+    # if failed to read damage for both players, skip
+    if all(player['damage'] in ['', ' ', None] for player in payload['players']):
+        return
+    # if damage is read as empty, it means they've lost all of their stocks.
     for player in payload['players']:
-        if player['stocks'] and player['stocks'] < 3 and player['damage'] in ['', ' ', None]:
+        if player['stocks'] and player['damage'] in ['', ' ', None]:
             player['stocks'] = 0
             core.print_with_time(
                 str(player['name']), "has lost all of their stocks - ", end='')
