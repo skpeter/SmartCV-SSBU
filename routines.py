@@ -1,6 +1,7 @@
 import configparser
 import time
 import numpy as np
+from PIL import Image
 import ssbu
 import core.core as core
 from core.matching import findBestMatch
@@ -271,7 +272,7 @@ def detect_game_end(payload: dict, img, scale_x: float, scale_y: float):
         match_score1, match_score2, end=' ',
         debug_only=True
     )
-    if match_score1 >= threshold or match_score1 >= threshold or resultDetectRetries > 0:
+    if match_score1 >= threshold or match_score2 >= threshold or resultDetectRetries > 0:
         if payload['state'] != previous_states[-1]:
             print("Game end detected")
             previous_states.append(payload['state'])
@@ -285,6 +286,29 @@ def detect_game_end(payload: dict, img, scale_x: float, scale_y: float):
             print("No match")
 
 
+def _read_damage_region(img, x, y, w, h, pad_px=4):
+    """Try reading numeric text from a region with padding and multiple OCR attempts."""
+    # Slightly pad region to avoid clipping digit edges (clip to image bounds)
+    img_w, img_h = img.size
+    x1 = max(0, x - pad_px)
+    y1 = max(0, y - pad_px)
+    w1 = min(img_w - x1, w + 2 * pad_px)
+    h1 = min(img_h - y1, h + 2 * pad_px)
+    crop = img.crop((x1, y1, x1 + w1, y1 + h1))
+    # Upscale small crops so EasyOCR sees larger text (often more reliable)
+    if min(w1, h1) < 120:
+        crop = crop.resize((w1 * 2, h1 * 2), Image.Resampling.LANCZOS)
+    # Try several contrast/low_text combinations; use first non-empty result
+    for contrast, low_text in [(1.5, 0.2), (2, 0.1), (2.5, 0.15)]:
+        result = core.read_text(
+            crop, region=None,
+            allowlist="0123456789.%", contrast=contrast, low_text=low_text
+        )
+        if result:
+            return result
+    return None
+
+
 def process_game_end_data(img, scale_x, scale_y):
     x, y, w, h = (
         int(510 * scale_x), int(920 * scale_y),
@@ -296,16 +320,8 @@ def process_game_end_data(img, scale_x, scale_y):
     )
 
     results = []
-
-    results = []
-    results.append(
-        core.read_text(img, (x, y, w, h),
-                       allowlist="0123456789.%", contrast=2, low_text=0.1)
-    )
-    results.append(
-        core.read_text(img, (x1, y2, w2, h2),
-                       allowlist="0123456789.%", contrast=2, low_text=0.1)
-    )
+    results.append(_read_damage_region(img, x, y, w, h))
+    results.append(_read_damage_region(img, x1, y2, w2, h2))
 
     payload['players'][0]['damage'] = ' '.join(
         results[0]) if results[0] else ''
