@@ -7,8 +7,12 @@ on:
     paths-ignore:
       - 'README.md'
   workflow_dispatch:
-  repository_dispatch:
+    repository_dispatch:
     types: [core-updated]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build:
@@ -19,6 +23,7 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
       with:
+        ref: ${{ github.ref }}
         submodules: recursive
 
     - name: Set up Python
@@ -71,6 +76,28 @@ jobs:
         cd dist\smartcv
         powershell Compress-Archive -Path * -DestinationPath ..\release.zip
 
+    - name: Create source zip with submodule files
+      shell: pwsh
+      run: |
+        $rootName = "${{ github.event.repository.name }}-${{ github.ref_name }}"
+        New-Item -ItemType Directory -Path $rootName | Out-Null
+        Get-ChildItem -Force | Where-Object {
+          $_.Name -notin @('.git', 'dist', 'build', $rootName)
+        } | Copy-Item -Recurse -Destination $rootName -Force
+        Get-ChildItem $rootName -Recurse -Force -Filter '.git' | Remove-Item -Recurse -Force
+        Get-ChildItem $rootName -Recurse -Force -Directory -Filter '__pycache__' | Remove-Item -Recurse -Force
+        Compress-Archive -Path $rootName -DestinationPath dist\source.zip -Force
+
+    - name: Refuse stale publish
+      shell: pwsh
+      run: |
+        git fetch origin ${{ github.ref_name }} --depth=1
+        $tip = (git rev-parse "origin/${{ github.ref_name }}").Trim()
+        $head = (git rev-parse HEAD).Trim()
+        if ($head -ne $tip) {
+          throw "Not tip of ${{ github.ref_name }} ($head vs $tip). Refusing to publish."
+        }
+
     - name: Update release tag to latest commit
       run: |
         git tag -f release-${{ github.ref_name }}
@@ -80,6 +107,7 @@ jobs:
       uses: svenstaro/upload-release-action@v2
       with:
         repo_token: ${{ secrets.GITHUB_TOKEN }}
-        file: dist/release.zip
+        file: dist/*.zip
+        file_glob: true
         tag: release-${{ github.ref_name }}
         overwrite: true
