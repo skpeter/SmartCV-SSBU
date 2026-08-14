@@ -7,8 +7,8 @@ on:
     paths-ignore:
       - 'README.md'
   workflow_dispatch:
-    repository_dispatch:
-    types: [core-updated]
+  repository_dispatch:
+    types: [core-bumped]
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
