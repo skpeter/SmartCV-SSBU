@@ -18,13 +18,13 @@ It's a project that uses pixel detection to recognize certain situations in the 
 - Download **source.zip** from the [latest release](https://github.com/skpeter/SmartCV/releases/latest/download/source.zip). Do not use GitHub's auto-generated "Source code" zip — it is missing the `core` files.
 - Install Python if you haven't done so already [here](https://www.python.org/downloads/). **Recommended version is 3.12**.
 - Open a command prompt terminal on the installed directory and type `pip install -r core/requirements.txt`
-- First run of `smartcv.bat` still runs the same PyTorch setup if torch is missing or CPU-only while an NVIDIA GPU is present.
+- First run of the launch script still runs the same PyTorch setup if torch is missing or CPU-only while an NVIDIA GPU is present.
 
 ## Step 2: Setup
 SmartCV reads game data directly from the OBS video source you put it on through OBS Websockets. **Make sure you have OBS Websocket enabled and configured before continuing**. Open your `config.ini` file, find a setting called `source_title`, insert the name of your OBS source, and that's it! Make sure the other OBS settings are correct so SmartCV can connect with OBS. `width` and `height` are the resolution of the image OBS sends. If you want to save up on some CPU usage, you can lower this resolution (as long as it's 16:9 aspect ration), however some things may not behave like normal if you do.
 
 ### Step 3: Usage
-- To run the app, open `smartcv.exe` (release zip) or `smartcv.bat` (source).
+- To run the app, open `smartcv.exe` (release zip) or a launch script (source): `smartcv.bat` (Windows), `smartcv.sh` (Linux), `smartcv.command` (macOS). Git clone: same files live under `core/`.
 **From here all you need to do is follow the on-screen instructions for the game detection to start.**
 **If using OBS, make sure it is open and do not disable the game capture source!**
 

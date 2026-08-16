@@ -92,14 +92,7 @@ jobs:
     - name: Create source zip with submodule files
       shell: pwsh
       run: |
-        $rootName = "${{ github.event.repository.name }}-${{ github.ref_name }}"
-        New-Item -ItemType Directory -Path $rootName | Out-Null
-        Get-ChildItem -Force | Where-Object {
-          $_.Name -notin @('.git', 'dist', 'build', $rootName)
-        } | Copy-Item -Recurse -Destination $rootName -Force
-        Get-ChildItem $rootName -Recurse -Force -Filter '.git' | Remove-Item -Recurse -Force
-        Get-ChildItem $rootName -Recurse -Force -Directory -Filter '__pycache__' | Remove-Item -Recurse -Force
-        Compress-Archive -Path $rootName -DestinationPath dist\source.zip -Force
+        python core\pack_source_zip.py --out dist\source.zip --name "${{ github.event.repository.name }}-${{ github.ref_name }}"
 
     - name: Refuse stale publish
       shell: pwsh
