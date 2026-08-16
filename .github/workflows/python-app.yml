@@ -40,6 +40,15 @@ jobs:
         pip install pyinstaller flake8
         pip install -r core\requirements.txt
 
+    - name: Scan torch/easyocr imports for freeze hiddenimports
+      shell: pwsh
+      run: |
+        if (Test-Path core\freeze_scan.py) {
+          python core\freeze_scan.py --out core\torch_hiddenimports.txt
+        } else {
+          Write-Host "freeze_scan.py not in this core pin; skip"
+        }
+
     - name: Keep torch out of the frozen bundle
       run: python -m pip uninstall -y torch torchvision torchaudio
       continue-on-error: true
