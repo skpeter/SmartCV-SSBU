@@ -40,6 +40,10 @@ jobs:
         pip install pyinstaller flake8
         pip install -r core\requirements.txt
 
+    - name: Keep torch out of the frozen bundle
+      run: python -m pip uninstall -y torch torchvision torchaudio
+      continue-on-error: true
+
     - name: Lint with flake8
       run: |
         # stop the build if there are Python syntax errors or undefined names

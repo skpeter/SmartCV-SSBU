@@ -11,30 +11,27 @@ It's a project that uses pixel detection to recognize certain situations in the 
 - Your copy of Super Smash Bros. Ultimate must be in **English** (other languages coming soon)
 
 ## Step 1: Installation
-- Follow either one of the two steps below:
-### Step 1.1: Installing the CPU version
-- Installing the CPU version is very easy. Just download the compiled release.zip [here](https://github.com/skpeter/smartcv-ssbu/releases).
+- Download the compiled release.zip [here](https://github.com/skpeter/smartcv-ssbu/releases).
 - You can skip to step 2 from here.
-### Step 1.2: Installing the GPU version
+
+### Source install (optional)
 - Download **source.zip** from the [latest release](https://github.com/skpeter/SmartCV/releases/latest/download/source.zip). Do not use GitHub's auto-generated "Source code" zip — it is missing the `core` files.
 - Install Python if you haven't done so already [here](https://www.python.org/downloads/). **Recommended version is 3.12**.
 - Open a command prompt terminal on the installed directory and type `pip install -r core/requirements.txt`
-- You will need to then install PyTorch, which is done through command prompt/terminal. Go to Pytorch's "Start Locally" section [here](https://pytorch.org/get-started/locally/), pick the **Stable** build, select the OS you use (**Windows, Mac or Linux**), **Pip** as packaging system, **Python** as language and then select the **Compute Platform** available on your GPU. You can check which version of CUDA your GPU supports [here](https://en.wikipedia.org/wiki/CUDA#GPUs_supported).
-![PyTorch installation page](img/install1.jpg)
-- - Choosing these options will generate a command that you should copy and paste on your terminal/command prompt. PyTorch weighs around 3GB, so take your time.
+- First run of `smartcv.bat` still runs the same PyTorch setup if torch is missing or CPU-only while an NVIDIA GPU is present.
 
 ## Step 2: Setup
 SmartCV reads game data directly from the OBS video source you put it on through OBS Websockets. **Make sure you have OBS Websocket enabled and configured before continuing**. Open your `config.ini` file, find a setting called `source_title`, insert the name of your OBS source, and that's it! Make sure the other OBS settings are correct so SmartCV can connect with OBS. `width` and `height` are the resolution of the image OBS sends. If you want to save up on some CPU usage, you can lower this resolution (as long as it's 16:9 aspect ration), however some things may not behave like normal if you do.
 
 ### Step 3: Usage
-- To run the GPU version of the app, open the `smartcv.bat` file. To run the CPU version just open `smartcv.exe`.
+- To run the app, open `smartcv.exe` (release zip) or `smartcv.bat` (source).
 **From here all you need to do is follow the on-screen instructions for the game detection to start.**
 **If using OBS, make sure it is open and do not disable the game capture source!**
 
 ## Troubleshooting
 - **When I run the app it says a bunch of code that ends with `ModuleNotFoundError: No module named 'torch'"` at the end! What do I do?**
 
-Try restarting your system. If that doesn't work, append `py -m` to the code that installs PyTorch. For example: `py -m pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118`
+First launch needs internet to download PyTorch. Check the console for setup errors. Delete `%LOCALAPPDATA%\SmartCV\torch` and rerun to force setup again.
 
 ## Where do I use this?
 SmartCV opens a websocket server (on port 6565 by default) to send data to.
