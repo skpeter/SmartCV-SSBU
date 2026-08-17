@@ -13,6 +13,16 @@ base_width = 1920
 base_height = 1080
 previous_states = [None]
 resultDetectRetries = 0
+game_end_latched = False
+pending_stock_ocr = None
+stock_event_armed = True
+# GAME!/TIME! share a thick white bottom outline with a black band above it.
+_END_OUTLINE_X = (360, 1560)
+_END_OUTLINE_Y = (510, 590)
+_END_WHITE_MIN = 240
+_END_BLACK_MAX = 40
+_END_MIN_RUN = 400
+_END_BLACK_ABOVE = (15, 25)
 
 payload = {
     "state": None,
@@ -50,6 +60,7 @@ def detect_stage_select_screen(payload: dict, img, scale_x: float, scale_y: floa
         print("Stage select screen detected")
         payload['state'] = "stage_select"
         payload['stage'] = None
+        _reset_in_game_detection_state()
         if payload['state'] != previous_states[-1]:
             previous_states.append(payload['state'])
     else:
@@ -93,6 +104,7 @@ def detect_character_select_screen(payload: dict, img, scale_x: float, scale_y: 
         print("Character select screen detected")
         if payload['state'] != previous_states[-1]:
             previous_states.append(payload['state'])
+            _reset_in_game_detection_state()
             # clean up some more player information
             for player in payload['players']:
                 player['stocks'] = None
@@ -131,6 +143,7 @@ def detect_versus_screen(payload: dict, img, scale_x: float, scale_y: float):
             for player in payload['players']:
                 player['stocks'] = 3
             previous_states.append(payload['state'])
+            _reset_in_game_detection_state()
 
             def read_characters_and_names(payload: dict, img, scale_x: float, scale_y: float, attempts: int = 0):
                 # Initialize the reader
@@ -205,9 +218,79 @@ def do_mii_recognition(img, player: int, scale_x, scale_y):
     return result
 
 
-def detect_taken_stock(payload: dict, img, scale_x: float, scale_y: float):
+def _reset_in_game_detection_state():
+    global resultDetectRetries, game_end_latched, pending_stock_ocr, stock_event_armed
+    resultDetectRetries = 0
+    game_end_latched = False
+    pending_stock_ocr = None
+    stock_event_armed = True
 
-    # Define the region to check
+
+def _longest_run(mask):
+    padded = np.concatenate(([False], mask, [False]))
+    diffs = np.diff(padded.astype(np.int8))
+    starts = np.where(diffs == 1)[0]
+    ends = np.where(diffs == -1)[0]
+    if starts.size == 0:
+        return 0
+    return int((ends - starts).max())
+
+
+def end_outline_visible(img, scale_x, scale_y):
+    """True if a long white row has a long black row 15-25px above it (GAME!/TIME! outline)."""
+    arr = np.array(img)
+    x0 = int(_END_OUTLINE_X[0] * scale_x)
+    x1 = int(_END_OUTLINE_X[1] * scale_x)
+    y0 = int(_END_OUTLINE_Y[0] * scale_y)
+    y1 = int(_END_OUTLINE_Y[1] * scale_y)
+    min_run = int(_END_MIN_RUN * scale_x)
+    dy0 = max(1, int(_END_BLACK_ABOVE[0] * scale_y))
+    dy1 = max(dy0, int(_END_BLACK_ABOVE[1] * scale_y))
+    crop = arr[y0:y1, x0:x1]
+    if crop.size == 0:
+        return False
+    white = np.all(crop >= _END_WHITE_MIN, axis=2)
+    black = np.all(crop <= _END_BLACK_MAX, axis=2)
+    for i in np.flatnonzero(white.sum(axis=1) >= min_run):
+        if _longest_run(white[i]) < min_run:
+            continue
+        for dy in range(dy0, dy1 + 1):
+            yb = i - dy
+            if yb < 0:
+                continue
+            if black[yb].sum() >= min_run and _longest_run(black[yb]) >= min_run:
+                return True
+    return False
+
+
+def _apply_stock_ocr(payload, img, scale_x, scale_y):
+    img = np.array(img)
+    x, y, w, h = (200, int(340 * scale_y),
+                  int(1450 * scale_x), int(265 * scale_y))
+    img = img[int(y):int(y + h), int(x):int(x + w)]
+    img = core.stitch_text_regions(img, 50, (255, 255, 255), 50, 0.1)
+    if not img.any():
+        return None
+    stocks = count_stock_numbers(img)
+    if len(stocks) == 2:
+        payload['players'][0]['stocks'] = stocks[0]
+        payload['players'][1]['stocks'] = stocks[1]
+        print("Stock taken. Stocks left:",
+              payload['players'][0]['stocks'], " - ", payload['players'][1]['stocks'])
+    return stocks
+
+
+def detect_taken_stock(payload: dict, img, scale_x: float, scale_y: float):
+    global pending_stock_ocr, stock_event_armed
+
+    if payload.get('state') != 'in_game' or game_end_latched or resultDetectRetries > 0:
+        pending_stock_ocr = None
+        return
+
+    if pending_stock_ocr is not None:
+        _apply_stock_ocr(payload, *pending_stock_ocr)
+        pending_stock_ocr = None
+
     region = (
         int(910 * scale_x),
         int(450 * scale_y),
@@ -216,25 +299,16 @@ def detect_taken_stock(payload: dict, img, scale_x: float, scale_y: float):
     )
     target_color = (255, 255, 255)  # # ffffff in RGB
     deviation = 0.15
-
-    core.print_with_time("Color region confidence: ", core.get_color_match_in_region(
-        img, region, target_color, deviation), " at function detect_taken_stock -", end=' ', debug_only=True)
-    if core.get_color_match_in_region(img, region, target_color, deviation) >= 0.9:
-
-        img = np.array(img)
-        x, y, w, h = (200, int(340 * scale_y),
-                      int(1450 * scale_x), int(265 * scale_y))
-        img = img[int(y):int(y + h), int(x):int(x + w)]
-        img = core.stitch_text_regions(img, 50, (255, 255, 255), 50, 0.1)
-        if not img.any():
-            return None
-        stocks = count_stock_numbers(img)
-        if len(stocks) == 2:
-            payload['players'][0]['stocks'] = stocks[0]
-            payload['players'][1]['stocks'] = stocks[1]
-            print("Stock taken. Stocks left:",
-                  payload['players'][0]['stocks'], " - ", payload['players'][1]['stocks'])
+    confidence = core.get_color_match_in_region(
+        img, region, target_color, deviation)
+    core.print_with_time("Color region confidence: ", confidence,
+                         " at function detect_taken_stock -", end=' ', debug_only=True)
+    if confidence >= 0.9:
+        if stock_event_armed:
+            pending_stock_ocr = (img, scale_x, scale_y)
+            stock_event_armed = False
     else:
+        stock_event_armed = True
         if config.getboolean('settings', 'debug_mode', fallback=False):
             print("No match")
 
@@ -252,38 +326,28 @@ def count_stock_numbers(img):
 
 
 def detect_game_end(payload: dict, img, scale_x: float, scale_y: float):
-    global resultDetectRetries
-    # Crop the specific area
-    x, y, w, h = (
-        int(312 * scale_x),
-        int(225 * scale_y),
-        int(1300 * scale_x),
-        int(445 * scale_y)
-    )
-    match_score1 = core.detect_image(
-        img, scale_x, scale_y, 'img/GAME.png', (x, y, w, h))
-    match_score2 = core.detect_image(
-        img, scale_x, scale_y, 'img/TIME.png', (x, y, w, h))
+    global resultDetectRetries, game_end_latched, pending_stock_ocr
 
-    # Check if the maximum correlation coefficient exceeds the threshold
-    threshold = 0.5
-    core.print_with_time(
-        "End game text matching results:",
-        match_score1, match_score2, end=' ',
-        debug_only=True
-    )
-    if match_score1 >= threshold or match_score2 >= threshold or resultDetectRetries > 0:
-        if payload['state'] != previous_states[-1]:
+    if not game_end_latched:
+        hit = end_outline_visible(img, scale_x, scale_y)
+        core.print_with_time(
+            "End game outline match:", hit, end=' ', debug_only=True)
+        if hit:
+            game_end_latched = True
+            pending_stock_ocr = None
             print("Game end detected")
-            previous_states.append(payload['state'])
-        process_game_end_data(img, scale_x, scale_y)
-        resultDetectRetries += 1
-        if any(player['stocks'] == 0 for player in payload['players']) or resultDetectRetries == 5:
-            payload['state'] = "game_end"
-            resultDetectRetries = 0
-    else:
-        if config.getboolean('settings', 'debug_mode', fallback=False):
+        elif config.getboolean('settings', 'debug_mode', fallback=False):
             print("No match")
+            return
+        else:
+            return
+    process_game_end_data(img, scale_x, scale_y)
+    resultDetectRetries += 1
+    if any(player['stocks'] == 0 for player in payload['players']) or resultDetectRetries == 5:
+        payload['state'] = "game_end"
+        if previous_states[-1] != "game_end":
+            previous_states.append("game_end")
+        _reset_in_game_detection_state()
 
 
 def _read_damage_region(img, x, y, w, h, pad_px=4):
@@ -363,7 +427,7 @@ states_to_functions = {
         detect_versus_screen
     ],
     "in_game": [
-        detect_taken_stock, detect_game_end,
+        detect_game_end, detect_taken_stock,
         detect_stage_select_screen if not config.getboolean(
             'settings', 'disable_stage_selection', fallback=False) else None
     ],
