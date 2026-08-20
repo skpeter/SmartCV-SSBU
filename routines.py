@@ -16,6 +16,8 @@ resultDetectRetries = 0
 game_end_latched = False
 pending_stock_ocr = None
 stock_event_armed = True
+versus_ocr_attempts = 0
+VERSUS_OCR_MAX_TRIES = 5
 # GAME!/TIME! share a thick white bottom outline with a black band above it.
 _END_OUTLINE_X = (360, 1560)
 _END_OUTLINE_Y = (510, 590)
@@ -92,6 +94,7 @@ def detect_selected_stage(payload: dict, img, scale_x: float, scale_y: float):
 
 
 def detect_character_select_screen(payload: dict, img, scale_x: float, scale_y: float):
+    global versus_ocr_attempts
     pixel = img.getpixel((int(433 * scale_x), int(36 * scale_y)))
 
     # Define the target color and deviation
@@ -111,20 +114,63 @@ def detect_character_select_screen(payload: dict, img, scale_x: float, scale_y: 
                 player['damage'] = None
                 player['character'] = None
                 player['name'] = None
+            versus_ocr_attempts = 0
     else:
         if config.getboolean('settings', 'debug_mode', fallback=False):
             print("No match")
     return
 
 
+def _enter_in_game(payload: dict):
+    if payload['state'] == "in_game":
+        return
+    payload['state'] = "in_game"
+    for player in payload['players']:
+        if player['stocks'] is None:
+            player['stocks'] = 3
+    if previous_states[-1] != "in_game":
+        previous_states.append(payload['state'])
+        _reset_in_game_detection_state()
+
+
+def read_characters_and_names(payload: dict, img, scale_x: float, scale_y: float):
+    c1 = core.read_text(img, (int(
+        110 * scale_x), int(10 * scale_y), int(870 * scale_x), int(120 * scale_y)))
+    if c1:
+        c1, score = findBestMatch(' '.join(c1), ssbu.characters)
+        if score and score < 0.75:
+            c1 = do_mii_recognition(img, 1, scale_x, scale_y)
+    c2 = core.read_text(img, (int(
+        1070 * scale_x), int(10 * scale_y), int(870 * scale_x), int(120 * scale_y)))
+    if c2:
+        c2, score = findBestMatch(' '.join(c2), ssbu.characters)
+        if score and score < 0.75:
+            c2 = do_mii_recognition(img, 2, scale_x, scale_y)
+    if not c1 or not c2:
+        return False
+    core.print_with_time("Player 1 character:", c1)
+    core.print_with_time("Player 2 character:", c2)
+    t1 = ' '.join(core.read_text(
+        img, (int(5 * scale_x), int(155 * scale_y), int(240 * scale_x), int(50 * scale_y))) or [])
+    core.print_with_time("Player 1 tag:", t1)
+    t2 = ' '.join(core.read_text(img, (int(
+        965 * scale_x), int(155 * scale_y), int(240 * scale_x), int(50 * scale_y))) or [])
+    core.print_with_time("Player 2 tag:", t2)
+    payload['players'][0]['character'], payload['players'][1]['character'], payload[
+        'players'][0]['name'], payload['players'][1]['name'] = c1, c2, t1, t2
+    return True
+
+
 def detect_versus_screen(payload: dict, img, scale_x: float, scale_y: float):
-    if payload['players'][0]['character']:
+    global versus_ocr_attempts
+    if payload['players'][0]['character'] and payload['players'][1]['character']:
+        return
+    if versus_ocr_attempts >= VERSUS_OCR_MAX_TRIES:
+        _enter_in_game(payload)
         return
 
     pixel = img.getpixel((int(30 * scale_x), int(69 * scale_y)))
     pixel2 = img.getpixel((int(1040 * scale_x), int(55 * scale_y)))
-
-    # Define the target color and deviation
 
     target_color = (251, 53, 51)  # # FB3533 in RGB
     target_color2 = (33, 140, 254)  # #218CFE in RGB
@@ -135,54 +181,37 @@ def detect_versus_screen(payload: dict, img, scale_x: float, scale_y: float):
 
     core.print_with_time("Got color code ", pixel,
                          " at function detect_versus_screen -", end=' ', debug_only=True)
-    if (core.is_within_deviation(pixel, target_color, deviation) or core.is_within_deviation(pixel, target_color2, deviation) or core.is_within_deviation(pixel, target_color3, deviation)) and (core.is_within_deviation(pixel2, target_color2, deviation) or core.is_within_deviation(pixel2, target_color3, deviation) or core.is_within_deviation(pixel2, target_color4, deviation)):
-        print("Versus screen detected")
-        payload['state'] = "in_game"
-        if payload['state'] != previous_states[-1]:
-            # set initial game data, both players have 3 stocks
-            for player in payload['players']:
-                player['stocks'] = 3
-            previous_states.append(payload['state'])
-            _reset_in_game_detection_state()
+    versus_visible = (
+        core.is_within_deviation(pixel, target_color, deviation)
+        or core.is_within_deviation(pixel, target_color2, deviation)
+        or core.is_within_deviation(pixel, target_color3, deviation)
+    ) and (
+        core.is_within_deviation(pixel2, target_color2, deviation)
+        or core.is_within_deviation(pixel2, target_color3, deviation)
+        or core.is_within_deviation(pixel2, target_color4, deviation)
+    )
+    if versus_visible:
+        versus_ocr_attempts += 1
+        if versus_ocr_attempts == 1:
+            print("Versus screen detected")
+        else:
+            core.print_with_time(
+                f"Versus OCR retry {versus_ocr_attempts}/{VERSUS_OCR_MAX_TRIES}")
+        if read_characters_and_names(payload, img, scale_x, scale_y):
+            versus_ocr_attempts = VERSUS_OCR_MAX_TRIES
+            _enter_in_game(payload)
+            return
+        if versus_ocr_attempts >= VERSUS_OCR_MAX_TRIES:
+            core.print_with_time(
+                f"Versus OCR failed after {VERSUS_OCR_MAX_TRIES} tries, continuing in_game")
+            _enter_in_game(payload)
+        return
 
-            def read_characters_and_names(payload: dict, img, scale_x: float, scale_y: float, attempts: int = 0):
-                # Initialize the reader
-                c1 = core.read_text(img, (int(
-                    110 * scale_x), int(10 * scale_y), int(870 * scale_x), int(120 * scale_y)))
-                if c1:
-                    c1, score = findBestMatch(' '.join(c1), ssbu.characters)
-                    if score and score < 0.75:
-                        # Character is most likely a Mii
-                        c1 = do_mii_recognition(img, 1, scale_x, scale_y)
-                c2 = core.read_text(img, (int(
-                    1070 * scale_x), int(10 * scale_y), int(870 * scale_x), int(120 * scale_y)))
-                if c2:
-                    c2, score = findBestMatch(' '.join(c2), ssbu.characters)
-                    if score and score < 0.75:
-                        # Character is most likely a Mii
-                        c2 = do_mii_recognition(img, 2, scale_x, scale_y)
-                if (not c1 or not c2):
-                    time.sleep(core.refresh_rate)
-                    attempts += 1
-                    if attempts < 2:
-                        read_characters_and_names(
-                            payload, img, scale_x, scale_y, attempts)
-                    return
-                core.print_with_time("Player 1 character:", c1)
-                core.print_with_time("Player 2 character:", c2)
-                t1 = ' '.join(core.read_text(
-                    img, (int(5 * scale_x), int(155 * scale_y), int(240 * scale_x), int(50 * scale_y))) or [])
-                core.print_with_time("Player 1 tag:", t1)
-                t2 = ' '.join(core.read_text(img, (int(
-                    965 * scale_x), int(155 * scale_y), int(240 * scale_x), int(50 * scale_y))) or [])
-                core.print_with_time("Player 2 tag:", t2)
-                payload['players'][0]['character'], payload['players'][1]['character'], payload[
-                    'players'][0]['name'], payload['players'][1]['name'] = c1, c2, t1, t2
-            read_characters_and_names(payload, img, scale_x, scale_y)
-
-    else:
-        if config.getboolean('settings', 'debug_mode', fallback=False):
-            print("No match")
+    # Splash gone. Already tried OCR → do not sit on character_select.
+    if versus_ocr_attempts > 0:
+        _enter_in_game(payload)
+    elif config.getboolean('settings', 'debug_mode', fallback=False):
+        print("No match")
     return img
 
 
@@ -427,6 +456,7 @@ states_to_functions = {
         detect_versus_screen
     ],
     "in_game": [
+        detect_versus_screen,
         detect_game_end, detect_taken_stock,
         detect_stage_select_screen if not config.getboolean(
             'settings', 'disable_stage_selection', fallback=False) else None
