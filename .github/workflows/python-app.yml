@@ -61,8 +61,10 @@ jobs:
         flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
 
     - name: Generate build_info.py with build number
+      shell: pwsh
       run: |
-        echo "__version__ = '${{ github.run_number }}'" > core/build_info.py
+        $content = "__version__ = '${{ github.run_number }}'`nrepo = '${{ github.event.repository.name }}'`n"
+        [System.IO.File]::WriteAllText("$pwd/core/build_info.py", $content)
 
     - name: Build with PyInstaller
       run: pyinstaller core\main.spec --clean --noconfirm
@@ -91,6 +93,11 @@ jobs:
       run: |
         python core\pack_source_zip.py --out dist\source.zip --name "${{ github.event.repository.name }}-${{ github.ref_name }}"
 
+    - name: Write version.txt for updater
+      shell: pwsh
+      run: |
+        [System.IO.File]::WriteAllText("$pwd/dist/version.txt", "${{ github.run_number }}")
+
     - name: Refuse stale publish
       shell: pwsh
       run: |
@@ -112,5 +119,13 @@ jobs:
         repo_token: ${{ secrets.GITHUB_TOKEN }}
         file: dist/*.zip
         file_glob: true
+        tag: release-${{ github.ref_name }}
+        overwrite: true
+
+    - name: Upload version.txt to release
+      uses: svenstaro/upload-release-action@v2
+      with:
+        repo_token: ${{ secrets.GITHUB_TOKEN }}
+        file: dist/version.txt
         tag: release-${{ github.ref_name }}
         overwrite: true
