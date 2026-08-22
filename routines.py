@@ -59,7 +59,7 @@ def detect_stage_select_screen(payload: dict, img, scale_x: float, scale_y: floa
     core.print_with_time("Got 2nd color code ", pixel2,
                          " at function detect_stage_select_screen -", end=' ', debug_only=True)
     if core.is_within_deviation(pixel1, target_color1, deviation) and core.is_within_deviation(pixel2, target_color2, deviation):
-        print("Stage select screen detected")
+        core.print_with_time("Stage select screen detected")
         payload['state'] = "stage_select"
         payload['stage'] = None
         _reset_in_game_detection_state()
@@ -67,7 +67,7 @@ def detect_stage_select_screen(payload: dict, img, scale_x: float, scale_y: floa
             previous_states.append(payload['state'])
     else:
         if config.getboolean('settings', 'debug_mode', fallback=False):
-            print("No match")
+            core.print_with_time("No match")
 
 
 def detect_selected_stage(payload: dict, img, scale_x: float, scale_y: float):
@@ -86,11 +86,11 @@ def detect_selected_stage(payload: dict, img, scale_x: float, scale_y: float):
             110 * scale_x), int(700 * scale_y), int(500 * scale_x), int(100 * scale_y)))
         if stage:
             payload['stage'], _ = findBestMatch(' '.join(stage), ssbu.stages)
-        print("Selected stage:", payload['stage'])
+        core.print_with_time("Selected stage:", payload['stage'])
         time.sleep(1)
     else:
         if config.getboolean('settings', 'debug_mode', fallback=False):
-            print("No match")
+            core.print_with_time("No match")
 
 
 def detect_character_select_screen(payload: dict, img, scale_x: float, scale_y: float):
@@ -104,7 +104,7 @@ def detect_character_select_screen(payload: dict, img, scale_x: float, scale_y: 
                          " at function detect_character_select_screen -", end=' ', debug_only=True)
     if core.is_within_deviation(pixel, target_color, deviation):
         payload['state'] = "character_select"
-        print("Character select screen detected")
+        core.print_with_time("Character select screen detected")
         if payload['state'] != previous_states[-1]:
             previous_states.append(payload['state'])
             _reset_in_game_detection_state()
@@ -117,7 +117,7 @@ def detect_character_select_screen(payload: dict, img, scale_x: float, scale_y: 
             versus_ocr_attempts = 0
     else:
         if config.getboolean('settings', 'debug_mode', fallback=False):
-            print("No match")
+            core.print_with_time("No match")
     return
 
 
@@ -193,7 +193,7 @@ def detect_versus_screen(payload: dict, img, scale_x: float, scale_y: float):
     if versus_visible:
         versus_ocr_attempts += 1
         if versus_ocr_attempts == 1:
-            print("Versus screen detected")
+            core.print_with_time("Versus screen detected")
         else:
             core.print_with_time(
                 f"Versus OCR retry {versus_ocr_attempts}/{VERSUS_OCR_MAX_TRIES}")
@@ -211,7 +211,7 @@ def detect_versus_screen(payload: dict, img, scale_x: float, scale_y: float):
     if versus_ocr_attempts > 0:
         _enter_in_game(payload)
     elif config.getboolean('settings', 'debug_mode', fallback=False):
-        print("No match")
+        core.print_with_time("No match")
     return img
 
 
@@ -304,7 +304,7 @@ def _apply_stock_ocr(payload, img, scale_x, scale_y):
     if len(stocks) == 2:
         payload['players'][0]['stocks'] = stocks[0]
         payload['players'][1]['stocks'] = stocks[1]
-        print("Stock taken. Stocks left:",
+        core.print_with_time("Stock taken. Stocks left:",
               payload['players'][0]['stocks'], " - ", payload['players'][1]['stocks'])
     return stocks
 
@@ -339,7 +339,7 @@ def detect_taken_stock(payload: dict, img, scale_x: float, scale_y: float):
     else:
         stock_event_armed = True
         if config.getboolean('settings', 'debug_mode', fallback=False):
-            print("No match")
+            core.print_with_time("No match")
 
 
 def count_stock_numbers(img):
@@ -364,9 +364,9 @@ def detect_game_end(payload: dict, img, scale_x: float, scale_y: float):
         if hit:
             game_end_latched = True
             pending_stock_ocr = None
-            print("Game end detected")
+            core.print_with_time("Game end detected")
         elif config.getboolean('settings', 'debug_mode', fallback=False):
-            print("No match")
+            core.print_with_time("No match")
             return
         else:
             return
@@ -429,11 +429,17 @@ def process_game_end_data(img, scale_x, scale_y):
         player['damage'] = player['damage'].replace(".%", "")
         if player['stocks'] and player['damage'] in ['', ' ', None]:
             player['stocks'] = 0
-            core.print_with_time(
-                str(player['name']), "has lost all of their stocks - ", end='')
-            for player in payload['players']:
-                if player['damage'] not in ['', ' ', None]:
-                    print(str(player['name']), "wins!")
+            winners = [
+                str(p['name']) for p in payload['players']
+                if p['damage'] not in ['', ' ', None]
+            ]
+            if winners:
+                core.print_with_time(
+                    str(player['name']), "has lost all of their stocks -",
+                    " ".join(f"{name} wins!" for name in winners))
+            else:
+                core.print_with_time(
+                    str(player['name']), "has lost all of their stocks")
         time.sleep(core.refresh_rate)
     core.print_with_time(
         f"Damage count - Player 1: '{payload['players'][0]['damage']}' - Player 2: '{payload['players'][1]['damage']}'", debug_only=True)
