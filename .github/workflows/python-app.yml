@@ -39,18 +39,19 @@ jobs:
         python -m pip install --upgrade pip
         pip install pyinstaller flake8
         pip install -r core\requirements.txt
+        pip install paddlepaddle==3.3.0 -i https://www.paddlepaddle.org.cn/packages/stable/cpu/
 
-    - name: Scan torch/easyocr imports for freeze hiddenimports
+    - name: Scan paddleocr imports for freeze hiddenimports
       shell: pwsh
       run: |
         if (Test-Path core\freeze_scan.py) {
-          python core\freeze_scan.py --out core\torch_hiddenimports.txt
+          python core\freeze_scan.py --out core\paddle_hiddenimports.txt
         } else {
           Write-Host "freeze_scan.py not in this core pin; skip"
         }
 
-    - name: Keep torch out of the frozen bundle
-      run: python -m pip uninstall -y torch torchvision torchaudio
+    - name: Keep paddlepaddle out of the frozen bundle
+      run: python -m pip uninstall -y paddlepaddle paddlepaddle-gpu
       continue-on-error: true
 
     - name: Lint with flake8

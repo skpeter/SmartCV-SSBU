@@ -293,20 +293,36 @@ def end_outline_visible(img, scale_x, scale_y):
 
 
 def _apply_stock_ocr(payload, img, scale_x, scale_y):
-    img = np.array(img)
+    arr = np.array(img)
     x, y, w, h = (200, int(340 * scale_y),
                   int(1450 * scale_x), int(265 * scale_y))
-    img = img[int(y):int(y + h), int(x):int(x + w)]
-    img = core.stitch_text_regions(img, 50, (255, 255, 255), 50, 0.1)
-    if not img.any():
+    band = arr[int(y):int(y + h), int(x):int(x + w)]
+    if band.size == 0:
         return None
-    stocks = count_stock_numbers(img)
-    if len(stocks) == 2:
+    strips = core.extract_text_strips(band, 50, (255, 255, 255), 50, 0.1)
+    if len(strips) > 2:
+        strips = [strips[0], strips[-1]]
+    stocks = [_read_stock_digit(strip) for strip in strips]
+    if len(stocks) == 2 and all(s is not None for s in stocks):
         payload['players'][0]['stocks'] = stocks[0]
         payload['players'][1]['stocks'] = stocks[1]
-        print("Stock taken. Stocks left:",
+        core.print_with_time("Stock taken. Stocks left:",
               payload['players'][0]['stocks'], " - ", payload['players'][1]['stocks'])
-    return stocks
+        return stocks
+    return None
+
+
+def _read_stock_digit(strip):
+    """OCR one stock digit strip. Paddle handles single-glyph crops."""
+    if strip is None or getattr(strip, "size", 0) == 0:
+        return None
+    result = core.read_text(Image.fromarray(strip), allowlist='123', low_text=0.3)
+    if isinstance(result, list):
+        result = ''.join(result)
+    if not result:
+        return None
+    digits = [int(c) for c in str(result) if c.isdigit()]
+    return digits[0] if digits else None
 
 
 def detect_taken_stock(payload: dict, img, scale_x: float, scale_y: float):
@@ -339,19 +355,7 @@ def detect_taken_stock(payload: dict, img, scale_x: float, scale_y: float):
     else:
         stock_event_armed = True
         if config.getboolean('settings', 'debug_mode', fallback=False):
-            print("No match")
-
-
-def count_stock_numbers(img):
-    result = core.read_text(img, allowlist='123', low_text=0.3)
-    if isinstance(result, list):
-        result = ''.join(result)
-    if not result or len(result) < 2:
-        return [None]
-    result = [int(x) for x in str(result) if x.isdigit()]
-    if len(result) > 2:
-        result = core.remove_neighbor_duplicates(result)
-    return result
+            core.print_with_time("No match")
 
 
 def detect_game_end(payload: dict, img, scale_x: float, scale_y: float):
@@ -388,7 +392,7 @@ def _read_damage_region(img, x, y, w, h, pad_px=4):
     w1 = min(img_w - x1, w + 2 * pad_px)
     h1 = min(img_h - y1, h + 2 * pad_px)
     crop = img.crop((x1, y1, x1 + w1, y1 + h1))
-    # Upscale small crops so EasyOCR sees larger text (often more reliable)
+    # Upscale small crops so OCR sees larger glyphs
     if min(w1, h1) < 120:
         crop = crop.resize((w1 * 2, h1 * 2), Image.Resampling.LANCZOS)
     # Try several contrast/low_text combinations; use first non-empty result
