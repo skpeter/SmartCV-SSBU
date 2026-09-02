@@ -21,8 +21,8 @@ VERSUS_OCR_MAX_TRIES = 5
 # GAME!/TIME! share a thick white bottom outline with a black band above it.
 _END_OUTLINE_X = (360, 1560)
 _END_OUTLINE_Y = (510, 590)
-_END_WHITE_MIN = 240
-_END_BLACK_MAX = 40
+_END_WHITE_MIN = 220  # OBS webp/scale often lands 220-235, not 255
+_END_BLACK_MAX = 60   # compressed black often 45-70, not 0
 _END_MIN_RUN = 400
 _END_BLACK_ABOVE = (15, 25)
 
@@ -265,9 +265,8 @@ def _longest_run(mask):
     return int((ends - starts).max())
 
 
-def end_outline_visible(img, scale_x, scale_y):
-    """True if a long white row has a long black row 15-25px above it (GAME!/TIME! outline)."""
-    arr = np.array(img)
+def end_outline_scan(img, scale_x, scale_y):
+    """GAME!/TIME! outline: long white run with a long black run 15-25px above it."""
     x0 = int(_END_OUTLINE_X[0] * scale_x)
     x1 = int(_END_OUTLINE_X[1] * scale_x)
     y0 = int(_END_OUTLINE_Y[0] * scale_y)
@@ -275,21 +274,52 @@ def end_outline_visible(img, scale_x, scale_y):
     min_run = int(_END_MIN_RUN * scale_x)
     dy0 = max(1, int(_END_BLACK_ABOVE[0] * scale_y))
     dy1 = max(dy0, int(_END_BLACK_ABOVE[1] * scale_y))
+    stats = {
+        "hit": False,
+        "roi": (x0, y0, x1, y1),
+        "white_min": _END_WHITE_MIN,
+        "black_max": _END_BLACK_MAX,
+        "min_run": min_run,
+        "dy": (dy0, dy1),
+        "white_max_run": 0,
+        "black_pair_run": 0,
+        "white_row": None,
+        "black_row": None,
+    }
+    arr = np.array(img)
     crop = arr[y0:y1, x0:x1]
     if crop.size == 0:
-        return False
+        return stats
     white = np.all(crop >= _END_WHITE_MIN, axis=2)
     black = np.all(crop <= _END_BLACK_MAX, axis=2)
-    for i in np.flatnonzero(white.sum(axis=1) >= min_run):
-        if _longest_run(white[i]) < min_run:
+    for i in range(white.shape[0]):
+        wrun = _longest_run(white[i])
+        if wrun > stats["white_max_run"]:
+            stats["white_max_run"] = wrun
+        if wrun < min_run:
             continue
         for dy in range(dy0, dy1 + 1):
             yb = i - dy
             if yb < 0:
                 continue
-            if black[yb].sum() >= min_run and _longest_run(black[yb]) >= min_run:
-                return True
-    return False
+            brun = _longest_run(black[yb])
+            if brun > stats["black_pair_run"]:
+                stats["black_pair_run"] = brun
+                stats["white_row"] = y0 + i
+                stats["black_row"] = y0 + yb
+            if brun >= min_run:
+                stats["hit"] = True
+                stats["white_max_run"] = max(stats["white_max_run"], wrun)
+                stats["black_pair_run"] = brun
+                stats["white_row"] = y0 + i
+                stats["black_row"] = y0 + yb
+                return stats
+    return stats
+
+
+def end_outline_visible(img, scale_x, scale_y):
+    """True if a long white row has a long black row 15-25px above it (GAME!/TIME! outline)."""
+    return end_outline_scan(img, scale_x, scale_y)["hit"]
 
 
 def _apply_stock_ocr(payload, img, scale_x, scale_y):
@@ -358,9 +388,25 @@ def detect_game_end(payload: dict, img, scale_x: float, scale_y: float):
     global resultDetectRetries, game_end_latched, pending_stock_ocr
 
     if not game_end_latched:
-        hit = end_outline_visible(img, scale_x, scale_y)
+        stats = end_outline_scan(img, scale_x, scale_y)
+        hit = stats["hit"]
+        x0, y0, x1, y1 = stats["roi"]
         core.print_with_time(
-            "End game outline match:", hit, end=' ', debug_only=True)
+            "Expected outline ROI ", (x0, y0, x1 - x0, y1 - y0),
+            f" white>={stats['white_min']} black<={stats['black_max']}"
+            f" min_run={stats['min_run']} dy={stats['dy'][0]}-{stats['dy'][1]}",
+            " at function detect_game_end",
+            debug_only=True,
+        )
+        core.print_with_time(
+            "Got outline white_run=", stats["white_max_run"],
+            " black_run=", stats["black_pair_run"],
+            " white_y=", stats["white_row"],
+            " black_y=", stats["black_row"],
+            " at function detect_game_end -",
+            end=' ',
+            debug_only=True,
+        )
         if hit:
             game_end_latched = True
             pending_stock_ocr = None
