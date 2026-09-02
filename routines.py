@@ -83,7 +83,7 @@ def detect_selected_stage(payload: dict, img, scale_x: float, scale_y: float):
                          " at function detect_selected_stage -", end=' ', debug_only=True)
     if core.is_within_deviation(pixel, target_color, deviation):
         stage = core.read_text(img, (int(
-            110 * scale_x), int(700 * scale_y), int(500 * scale_x), int(100 * scale_y)))
+            110 * scale_x), int(700 * scale_y), int(500 * scale_x), int(100 * scale_y)), colored=True)
         if stage:
             payload['stage'], _ = findBestMatch(' '.join(stage), ssbu.stages)
         print("Selected stage:", payload['stage'])
@@ -135,13 +135,13 @@ def _enter_in_game(payload: dict):
 
 def read_characters_and_names(payload: dict, img, scale_x: float, scale_y: float):
     c1 = core.read_text(img, (int(
-        110 * scale_x), int(10 * scale_y), int(870 * scale_x), int(120 * scale_y)))
+        110 * scale_x), int(10 * scale_y), int(870 * scale_x), int(120 * scale_y)), colored=True)
     if c1:
         c1, score = findBestMatch(' '.join(c1), ssbu.characters)
         if score and score < 0.75:
             c1 = do_mii_recognition(img, 1, scale_x, scale_y)
     c2 = core.read_text(img, (int(
-        1070 * scale_x), int(10 * scale_y), int(870 * scale_x), int(120 * scale_y)))
+        1070 * scale_x), int(10 * scale_y), int(870 * scale_x), int(120 * scale_y)), colored=True)
     if c2:
         c2, score = findBestMatch(' '.join(c2), ssbu.characters)
         if score and score < 0.75:
@@ -151,10 +151,10 @@ def read_characters_and_names(payload: dict, img, scale_x: float, scale_y: float
     core.print_with_time("Player 1 character:", c1)
     core.print_with_time("Player 2 character:", c2)
     t1 = ' '.join(core.read_text(
-        img, (int(5 * scale_x), int(155 * scale_y), int(240 * scale_x), int(50 * scale_y))) or [])
+        img, (int(5 * scale_x), int(155 * scale_y), int(240 * scale_x), int(50 * scale_y)), colored=True) or [])
     core.print_with_time("Player 1 tag:", t1)
     t2 = ' '.join(core.read_text(img, (int(
-        965 * scale_x), int(155 * scale_y), int(240 * scale_x), int(50 * scale_y))) or [])
+        965 * scale_x), int(155 * scale_y), int(240 * scale_x), int(50 * scale_y)), colored=True) or [])
     core.print_with_time("Player 2 tag:", t2)
     payload['players'][0]['character'], payload['players'][1]['character'], payload[
         'players'][0]['name'], payload['players'][1]['name'] = c1, c2, t1, t2
@@ -292,18 +292,17 @@ def end_outline_visible(img, scale_x, scale_y):
     return False
 
 
+# Stock-take big digits on 1920x1080 (left / right of center dash). No strip merge.
+_STOCK_DIGIT_P1 = (420, 360, 450, 200)
+_STOCK_DIGIT_P2 = (1050, 360, 450, 200)
+
+
 def _apply_stock_ocr(payload, img, scale_x, scale_y):
-    arr = np.array(img)
-    x, y, w, h = (200, int(340 * scale_y),
-                  int(1450 * scale_x), int(265 * scale_y))
-    band = arr[int(y):int(y + h), int(x):int(x + w)]
-    if band.size == 0:
-        return None
-    strips = core.extract_text_strips(band, 50, (255, 255, 255), 50, 0.1)
-    if len(strips) > 2:
-        strips = [strips[0], strips[-1]]
-    stocks = [_read_stock_digit(strip) for strip in strips]
-    if len(stocks) == 2 and all(s is not None for s in stocks):
+    stocks = [
+        _read_stock_digit(img, _STOCK_DIGIT_P1, scale_x, scale_y),
+        _read_stock_digit(img, _STOCK_DIGIT_P2, scale_x, scale_y),
+    ]
+    if all(s is not None for s in stocks):
         payload['players'][0]['stocks'] = stocks[0]
         payload['players'][1]['stocks'] = stocks[1]
         core.print_with_time("Stock taken. Stocks left:",
@@ -312,11 +311,11 @@ def _apply_stock_ocr(payload, img, scale_x, scale_y):
     return None
 
 
-def _read_stock_digit(strip):
-    """OCR one stock digit strip. Paddle handles single-glyph crops."""
-    if strip is None or getattr(strip, "size", 0) == 0:
-        return None
-    result = core.read_text(Image.fromarray(strip), allowlist='123', low_text=0.3)
+def _read_stock_digit(img, region, scale_x, scale_y):
+    """OCR one fixed stock-digit region."""
+    x, y, w, h = region
+    box = (int(x * scale_x), int(y * scale_y), int(w * scale_x), int(h * scale_y))
+    result = core.read_text(img, region=box, colored=True, allowlist='123', low_text=0.3)
     if isinstance(result, list):
         result = ''.join(result)
     if not result:
@@ -398,7 +397,7 @@ def _read_damage_region(img, x, y, w, h, pad_px=4):
     # Try several contrast/low_text combinations; use first non-empty result
     for contrast, low_text in [(1.5, 0.2), (2, 0.1), (2.5, 0.15)]:
         result = core.read_text(
-            crop, region=None,
+            crop, region=None, colored=True,
             allowlist="0123456789.%", contrast=contrast, low_text=low_text
         )
         if result:
