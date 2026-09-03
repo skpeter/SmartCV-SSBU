@@ -18,6 +18,8 @@ pending_stock_ocr = None
 stock_event_armed = True
 versus_ocr_attempts = 0
 VERSUS_OCR_MAX_TRIES = 5
+in_game_since = None
+GAME_END_MUTE_S = 10.0  # skip GAME!/TIME! outline; covers GO! after versus
 # GAME!/TIME! share a thick white bottom outline with a black band above it.
 _END_OUTLINE_X = (360, 1560)
 _END_OUTLINE_Y = (510, 590)
@@ -121,7 +123,13 @@ def detect_character_select_screen(payload: dict, img, scale_x: float, scale_y: 
     return
 
 
+def _now():
+    """Wall clock. validate_vod replaces this with video time each frame."""
+    return time.monotonic()
+
+
 def _enter_in_game(payload: dict):
+    global in_game_since
     if payload['state'] == "in_game":
         return
     payload['state'] = "in_game"
@@ -131,6 +139,7 @@ def _enter_in_game(payload: dict):
     if previous_states[-1] != "in_game":
         previous_states.append(payload['state'])
         _reset_in_game_detection_state()
+    in_game_since = _now()
 
 
 def read_characters_and_names(payload: dict, img, scale_x: float, scale_y: float):
@@ -165,9 +174,6 @@ def detect_versus_screen(payload: dict, img, scale_x: float, scale_y: float):
     global versus_ocr_attempts
     if payload['players'][0]['character'] and payload['players'][1]['character']:
         return
-    if versus_ocr_attempts >= VERSUS_OCR_MAX_TRIES:
-        _enter_in_game(payload)
-        return
 
     pixel = img.getpixel((int(30 * scale_x), int(69 * scale_y)))
     pixel2 = img.getpixel((int(1040 * scale_x), int(55 * scale_y)))
@@ -190,6 +196,12 @@ def detect_versus_screen(payload: dict, img, scale_x: float, scale_y: float):
         or core.is_within_deviation(pixel2, target_color3, deviation)
         or core.is_within_deviation(pixel2, target_color4, deviation)
     )
+
+    if versus_ocr_attempts >= VERSUS_OCR_MAX_TRIES:
+        if not versus_visible:
+            versus_ocr_attempts = 0
+        return
+
     if versus_visible:
         versus_ocr_attempts += 1
         if versus_ocr_attempts == 1:
@@ -203,13 +215,11 @@ def detect_versus_screen(payload: dict, img, scale_x: float, scale_y: float):
             return
         if versus_ocr_attempts >= VERSUS_OCR_MAX_TRIES:
             core.print_with_time(
-                f"Versus OCR failed after {VERSUS_OCR_MAX_TRIES} tries, continuing in_game")
-            _enter_in_game(payload)
+                f"Versus OCR failed after {VERSUS_OCR_MAX_TRIES} tries, not entering in_game")
         return
 
-    # Splash gone. Already tried OCR → do not sit on character_select.
     if versus_ocr_attempts > 0:
-        _enter_in_game(payload)
+        versus_ocr_attempts = 0
     elif config.getboolean('settings', 'debug_mode', fallback=False):
         core.print_with_time("No match")
     return img
@@ -388,8 +398,17 @@ def detect_game_end(payload: dict, img, scale_x: float, scale_y: float):
     global resultDetectRetries, game_end_latched, pending_stock_ocr
 
     if not game_end_latched:
+        muted = (
+            in_game_since is not None
+            and (_now() - in_game_since) < GAME_END_MUTE_S
+        )
         stats = end_outline_scan(img, scale_x, scale_y)
         hit = stats["hit"]
+        if muted and hit:
+            core.print_with_time("Game end ignored (mute after versus)")
+            return
+        if muted:
+            return
         x0, y0, x1, y1 = stats["roi"]
         core.print_with_time(
             "Expected outline ROI ", (x0, y0, x1 - x0, y1 - y0),
