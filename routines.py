@@ -5,6 +5,7 @@ from PIL import Image
 import ssbu
 import core.core as core
 from core.matching import findBestMatch
+from core.ocr_parse import apply_stock_pair, parse_stock_ocr_result
 client_name = "smartcv-ssbu"
 config = configparser.ConfigParser()
 config.read('config.ini')
@@ -317,11 +318,6 @@ def end_outline_scan(img, scale_x, scale_y):
     return stats
 
 
-def end_outline_visible(img, scale_x, scale_y):
-    """True if a long white row has a long black row 15-25px above it (GAME!/TIME! outline)."""
-    return end_outline_scan(img, scale_x, scale_y)["hit"]
-
-
 # Stock-take big digits on 1920x1080 (left / right of center dash). No strip merge.
 _STOCK_DIGIT_P1 = (420, 360, 450, 200)
 _STOCK_DIGIT_P2 = (1050, 360, 450, 200)
@@ -332,13 +328,11 @@ def _apply_stock_ocr(payload, img, scale_x, scale_y):
         _read_stock_digit(img, _STOCK_DIGIT_P1, scale_x, scale_y),
         _read_stock_digit(img, _STOCK_DIGIT_P2, scale_x, scale_y),
     ]
-    if all(s is not None for s in stocks):
-        payload['players'][0]['stocks'] = stocks[0]
-        payload['players'][1]['stocks'] = stocks[1]
+    applied = apply_stock_pair(payload, stocks)
+    if applied is not None:
         core.print_with_time("Stock taken. Stocks left:",
               payload['players'][0]['stocks'], " - ", payload['players'][1]['stocks'])
-        return stocks
-    return None
+    return applied
 
 
 def _read_stock_digit(img, region, scale_x, scale_y):
@@ -346,12 +340,7 @@ def _read_stock_digit(img, region, scale_x, scale_y):
     x, y, w, h = region
     box = (int(x * scale_x), int(y * scale_y), int(w * scale_x), int(h * scale_y))
     result = core.read_text(img, region=box, colored=True, allowlist='123', low_text=0.3)
-    if isinstance(result, list):
-        result = ''.join(result)
-    if not result:
-        return None
-    digits = [int(c) for c in str(result) if c.isdigit()]
-    return digits[0] if digits else None
+    return parse_stock_ocr_result(result)
 
 
 def detect_taken_stock(payload: dict, img, scale_x: float, scale_y: float):

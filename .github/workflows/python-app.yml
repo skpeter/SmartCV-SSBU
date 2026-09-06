@@ -70,6 +70,22 @@ jobs:
     - name: Build with PyInstaller
       run: pyinstaller core\main.spec --clean --noconfirm
 
+    - name: Assert paddlex data landed in the freeze
+      shell: pwsh
+      run: |
+        $root = "dist\smartcv"
+        if (-not (Test-Path $root)) { throw "missing $root" }
+        $pkg = Get-ChildItem $root -Recurse -Directory -ErrorAction SilentlyContinue |
+          Where-Object { $_.Name -eq "paddlex" } |
+          Select-Object -First 1
+        $meta = Get-ChildItem $root -Recurse -Directory -ErrorAction SilentlyContinue |
+          Where-Object { $_.Name -like "paddlex-*.dist-info" } |
+          Select-Object -First 1
+        if (-not $pkg) { throw "paddlex package dir missing from dist/smartcv" }
+        if (-not $meta) { throw "paddlex dist-info missing from dist/smartcv" }
+        Write-Host "paddlex ok: $($pkg.FullName)"
+        Write-Host "metadata ok: $($meta.FullName)"
+
     - name: Copy config file and images
       run: |
         copy core\config.ini.example dist\smartcv\config.ini

@@ -31,7 +31,7 @@ SmartCV reads game data directly from the OBS video source you put it on through
 ## Troubleshooting
 - **When I run the app it says a bunch of code that ends with `ModuleNotFoundError: No module named 'paddle'` (or paddleocr)! What do I do?**
 
-First launch needs internet to download PaddlePaddle into `%LOCALAPPDATA%\SmartCV\paddle`. Check the console for setup errors. Delete that folder and rerun to force setup again. For source installs, also confirm `pip install -r core/requirements.txt` completed (`paddleocr` is required; `paddlepaddle` is bootstrapped on first run).
+First launch needs internet to download PaddlePaddle into `%LOCALAPPDATA%\SmartCV\paddle`. OCR models download into `%LOCALAPPDATA%\SmartCV\paddle\paddlex`. Check the console for setup errors. Delete that paddle folder and rerun to force setup again (wheels and models). For source installs, also confirm `pip install -r core/requirements.txt` completed (`paddleocr` is required; `paddlepaddle` is bootstrapped on first run).
 
 ## Where do I use this?
 SmartCV opens a websocket server (on port 6565 by default) to send data to.
