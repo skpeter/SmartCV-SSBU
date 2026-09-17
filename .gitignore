@@ -163,3 +163,4 @@ cython_debug/
 config.ini
 tags.csv
 dev/*
+logs/
