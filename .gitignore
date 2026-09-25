@@ -164,3 +164,4 @@ config.ini
 tags.csv
 dev/*
 logs/
+docs/
