@@ -1,4 +1,6 @@
 """Wheel tag matching for the first-run Paddle install. No network."""
+import importlib
+import sys
 import unittest
 
 from packaging.tags import Tag
@@ -32,3 +34,32 @@ class WheelCompatTests(unittest.TestCase):
         self.assertFalse(pb._compat("safetensors-0.6.2-cp38-abi3-win32.whl"))
         self.assertFalse(pb._compat("safetensors-0.9.0-cp314-cp314-win_amd64.whl"))
         self.assertFalse(pb._compat("not-a-wheel.txt"))
+
+
+class SetuptoolsStubTests(unittest.TestCase):
+    def test_missing_easy_install_is_stubbed(self):
+        name = "setuptools.command.easy_install"
+        saved = sys.modules.get(name)
+        sys.modules.pop(name, None)
+
+        class _Block:
+            def find_spec(self, fullname, path, target=None):
+                if fullname == name:
+                    raise ModuleNotFoundError(name)
+                return None
+
+        blocker = _Block()
+        sys.meta_path.insert(0, blocker)
+        try:
+            pb._stub_removed_setuptools()
+            mod = importlib.import_module(name)
+            self.assertTrue(isinstance(mod.easy_install, type))
+        finally:
+            sys.meta_path.remove(blocker)
+            if saved is not None:
+                sys.modules[name] = saved
+            else:
+                sys.modules.pop(name, None)
+            parent = sys.modules.get("setuptools.command")
+            if parent is not None and saved is not None:
+                parent.easy_install = saved
