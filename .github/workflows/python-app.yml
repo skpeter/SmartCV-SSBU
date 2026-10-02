@@ -39,7 +39,7 @@ jobs:
         python -m pip install --upgrade pip
         pip install pyinstaller flake8
         pip install -r core\requirements.txt
-        pip install paddlepaddle==3.3.0 -i https://www.paddlepaddle.org.cn/packages/stable/cpu/
+        pip install paddlepaddle==3.2.2 -i https://www.paddlepaddle.org.cn/packages/stable/cpu/
 
     - name: Scan paddleocr imports for freeze hiddenimports
       shell: pwsh
