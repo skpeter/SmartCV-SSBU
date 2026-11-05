@@ -70,7 +70,7 @@ def detect_stage_select_screen(payload: dict, img, scale_x: float, scale_y: floa
             previous_states.append(payload['state'])
     else:
         if config.getboolean('settings', 'debug_mode', fallback=False):
-            core.print_with_time("No match")
+            core.print_with_time("No match", with_time=False)
 
 
 def detect_selected_stage(payload: dict, img, scale_x: float, scale_y: float):
@@ -93,7 +93,7 @@ def detect_selected_stage(payload: dict, img, scale_x: float, scale_y: float):
         time.sleep(1)
     else:
         if config.getboolean('settings', 'debug_mode', fallback=False):
-            core.print_with_time("No match")
+            core.print_with_time("No match", with_time=False)
 
 
 def detect_character_select_screen(payload: dict, img, scale_x: float, scale_y: float):
@@ -120,7 +120,7 @@ def detect_character_select_screen(payload: dict, img, scale_x: float, scale_y: 
             versus_ocr_attempts = 0
     else:
         if config.getboolean('settings', 'debug_mode', fallback=False):
-            core.print_with_time("No match")
+            core.print_with_time("No match", with_time=False)
     return
 
 
@@ -222,7 +222,7 @@ def detect_versus_screen(payload: dict, img, scale_x: float, scale_y: float):
     if versus_ocr_attempts > 0:
         versus_ocr_attempts = 0
     elif config.getboolean('settings', 'debug_mode', fallback=False):
-        core.print_with_time("No match")
+        core.print_with_time("No match", with_time=False)
     return img
 
 
@@ -388,7 +388,7 @@ def detect_taken_stock(payload: dict, img, scale_x: float, scale_y: float):
     else:
         stock_event_armed = True
         if config.getboolean('settings', 'debug_mode', fallback=False):
-            core.print_with_time("No match")
+            core.print_with_time("No match", with_time=False)
 
 
 def detect_game_end(payload: dict, img, scale_x: float, scale_y: float):
@@ -428,7 +428,7 @@ def detect_game_end(payload: dict, img, scale_x: float, scale_y: float):
             pending_stock_ocr = None
             core.print_with_time("Game end detected")
         elif config.getboolean('settings', 'debug_mode', fallback=False):
-            core.print_with_time("No match")
+            core.print_with_time("No match", with_time=False)
             return
         else:
             return
